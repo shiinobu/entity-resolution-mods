@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>gateway.internal — Certificate</title>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            color: #d8f5df;
+            background: #030603;
+        }
+        .panel {
+            width: min(720px, 92vw);
+            margin: 48px auto;
+            border: 1px solid #173617;
+            border-radius: 12px;
+            padding: 24px 28px;
+            background: rgba(7, 16, 7, 0.94);
+        }
+        h1 { font-size: 15px; color: #82c99b; margin: 0 0 18px; text-transform: uppercase; letter-spacing: 0.08em; }
+        dl { margin: 0; }
+        dt { color: #6da37a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 14px; }
+        dd { margin: 4px 0 0; color: #d8f5df; }
+        .san-entry { display: block; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>TLS Certificate — edge-03 (port 8443)</h1>
+        <dl>
+            <dt>Subject</dt>
+            <dd>gateway.internal</dd>
+            <dt>Issuer</dt>
+            <dd>ARKA Secure Infrastructure</dd>
+            <dt>Subject Alternative Name</dt>
+            <dd>
+                <span class="san-entry">gateway.internal</span>
+                <span class="san-entry">cri-gateway.internal</span>
+            </dd>
+        </dl>
+    </div>
+</body>
+</html>
