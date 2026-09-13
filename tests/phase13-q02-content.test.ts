@@ -6,10 +6,17 @@ import { fileURLToPath } from "node:url";
 
 import {
     Q02_ADRIAN_EMAIL,
+    Q02_ANOMALOUS_PORT,
+    Q02_CERTIFICATE_ISSUER,
     Q02_CLIENT_NAME,
+    Q02_EDGE_SITE_NAME,
     Q02_FINAL_STATE_FLAG,
+    Q02_GATEWAY_IP,
+    Q02_GATEWAY_SERVICE_NAME,
+    Q02_GATEWAY_SERVICE_VERSION,
     Q02_HIDDEN_HOSTNAME,
     Q02_HIDDEN_HOSTNAME_IP,
+    Q02_INCOMING_MAIL_CONTENT,
     Q02_OBJECTIVE_IDS,
     Q02_REPORT_BODY,
     Q02_REPORT_SUBJECT,
@@ -41,6 +48,30 @@ const questSource = readFileSync(
 
 const productionEntrySource = readFileSync(
     resolve(fileURLToPath(new URL("../src/index.ts", import.meta.url))),
+    "utf8",
+);
+
+const edgePortalSource = readFileSync(
+    resolve(
+        fileURLToPath(
+            new URL(
+                "../src/infrastructure/hackhub/websites/q02-edge-portal.ts",
+                import.meta.url,
+            ),
+        ),
+    ),
+    "utf8",
+);
+
+const gatewayPortalSource = readFileSync(
+    resolve(
+        fileURLToPath(
+            new URL(
+                "../src/infrastructure/hackhub/websites/q02-gateway-portal.ts",
+                import.meta.url,
+            ),
+        ),
+    ),
     "utf8",
 );
 
@@ -138,13 +169,84 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         );
     });
 
-    it("gates Objective 03 on nmap's -sV service-version flag, not a separate command", () => {
+    it("targets nmap by IP (not hostname) and requires -sV before Objectives 02+03 can complete (a bare scan reveals nothing about the forwarded port)", () => {
+        assert.match(questSource, /Shell\.addCommandData\("nmap", Q02_TARGET_IP, Q02_NMAP_RESULT\)/);
+        assert.match(
+            questSource,
+            /data\.args\.length > 0 &&\s*data\.args\[0\] !== this\.Data\.targetIp/,
+        );
         assert.match(questSource, /data\.args\.includes\("-sV"\)/);
+        assert.doesNotMatch(
+            questSource,
+            /Shell\.addCommandData\("nmap", Q02_WEB_HOST/,
+        );
     });
 
-    it("gates Objective 04 on visiting the certificate page over HTTPS on port 8443", () => {
-        assert.match(questSource, /data\.port !== "8443"/);
-        assert.match(questSource, /data\.hostname !== Q02_WEB_HOST/);
+    it("does not hand the player the IP directly — nmap needs it, but the player must resolve the hostname themselves", () => {
+        assert.doesNotMatch(Q02_INCOMING_MAIL_CONTENT, /203\.0\.113\.77/);
+        assert.match(Q02_INCOMING_MAIL_CONTENT, new RegExp(`Host: ${Q02_WEB_HOST}`));
+        assert.match(
+            questSource,
+            /Shell\.addCommandData\("nslookup", Q02_WEB_HOST, Q02_TARGET_IP\)/,
+        );
+    });
+
+    it("gates Objective 04 on visiting the forwarded destination IP over HTTPS (custom ports are not supported by HackHub's Website system — confirmed live via a 404)", () => {
+        assert.match(questSource, /data\.hostname !== Q02_GATEWAY_IP/);
+        assert.doesNotMatch(questSource, /data\.port/);
+        assert.equal(Q02_GATEWAY_IP, "66.250.1.99");
+        assert.equal(Q02_GATEWAY_SERVICE_VERSION, "nginx 1.18.0");
+    });
+
+    it("reveals the forwarded destination only via nmap -sV, as a FORWARDED port with a destination field (not the certificate/service header text jammed into version)", () => {
+        assert.match(
+            questSource,
+            /status: "FORWARDED",\s*service: "https-alt",\s*version: Q02_GATEWAY_SERVICE_VERSION,\s*destination: Q02_GATEWAY_IP,/,
+        );
+    });
+
+    it("gives edge-03.skynet-logistics.idx its own browsable Website (not just a nmap/nslookup fixture)", () => {
+        assert.match(edgePortalSource, /Host = Q02_WEB_HOST/);
+        assert.equal(Q02_EDGE_SITE_NAME, `${Q02_CLIENT_NAME} — Edge Node`);
+    });
+
+    it("does not mail-warn on plain HTTP — Adrian has no visibility into the player's own browser, so the nginx-style page is the only feedback", () => {
+        assert.match(questSource, /data\.hostname !== Q02_GATEWAY_IP/);
+        assert.match(questSource, /if \(data\.protocol !== "https:"\)/);
+        assert.doesNotMatch(questSource, /insecureWarningSent/);
+        assert.doesNotMatch(questSource, /Q02_INSECURE_WARNING/);
+    });
+
+    it("registers a GoMail compose template for Objective 05", () => {
+        assert.match(questSource, /Mail\.registerTemplate\(\{/);
+        assert.match(questSource, /id: Q02_REPORT_TEMPLATE_ID/);
+        assert.match(questSource, /fields: \["anomalousPort", "serviceName", "issuer"\]/);
+        assert.match(questSource, /Mail\.unregisterTemplate\(Q02_REPORT_TEMPLATE_ID\)/);
+    });
+
+    it("validates Objective 05 via two paths — freehand exact-match, or the template's raw JSON field payload (confirmed live: GoMail does not merge {{field}} into rendered text)", () => {
+        assert.doesNotMatch(questSource, /console\.log/);
+        assert.match(questSource, /isTemplateAnomalyReport/);
+        assert.match(questSource, /subject !== Q02_REPORT_TEMPLATE_ID/);
+        assert.match(questSource, /JSON\.parse\(content\)/);
+        assert.match(
+            questSource,
+            /anomalousPort === Q02_ANOMALOUS_PORT &&\s*serviceName === Q02_GATEWAY_SERVICE_NAME &&\s*issuer === Q02_CERTIFICATE_ISSUER/,
+        );
+        assert.equal(Q02_ANOMALOUS_PORT, "8443");
+        assert.equal(Q02_GATEWAY_SERVICE_NAME, "gateway.internal");
+        assert.equal(Q02_CERTIFICATE_ISSUER, "ARKA Secure Infrastructure");
+    });
+
+    it("removes the static Objective 04 hint now that HTTP/HTTPS feedback is reactive (nginx-style page + mail)", () => {
+        assert.doesNotMatch(questSource, /Browse to it over HTTPS/);
+    });
+
+    it("serves the gateway page mod-side via a dynamic page keyed on request protocol, reproducing nginx's real HTTPS-only-port rejection on plain HTTP", () => {
+        assert.match(gatewayPortalSource, /DynamicWebsitePageDefinition/);
+        assert.match(gatewayPortalSource, /context\.url\.startsWith\("https:"\)/);
+        assert.match(gatewayPortalSource, /q02-gateway-http-error\.html/);
+        assert.match(gatewayPortalSource, /Q02_GATEWAY_SERVICE_VERSION/);
     });
 
     it("deposits the money reward into the player's real bank account via the native Bank API", () => {
@@ -167,6 +269,10 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.match(
             productionEntrySource,
             /import "\.\/infrastructure\/hackhub\/websites\/q02-gateway-portal\.js";/,
+        );
+        assert.match(
+            productionEntrySource,
+            /import "\.\/infrastructure\/hackhub\/websites\/q02-edge-portal\.js";/,
         );
     });
 });

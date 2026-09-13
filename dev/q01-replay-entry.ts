@@ -10,6 +10,7 @@ import "../src/infrastructure/hackhub/commands/recon.js";
 import "../src/infrastructure/hackhub/commands/q01-subfinder.js";
 import "../src/infrastructure/hackhub/websites/q01-skynet-portal.js";
 import "../src/infrastructure/hackhub/websites/q02-gateway-portal.js";
+import "../src/infrastructure/hackhub/websites/q02-edge-portal.js";
 
 import { Q01_RECON_PROFILE } from "../src/content/q01.js";
 import { opsRuntime } from "../src/application/ops/runtime.js";

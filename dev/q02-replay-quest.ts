@@ -8,7 +8,12 @@ import {
 
 import {
     Q02_ADRIAN_EMAIL,
+    Q02_ANOMALOUS_PORT,
+    Q02_CERTIFICATE_ISSUER,
     Q02_COMPLETION_MAIL_CONTENT,
+    Q02_GATEWAY_IP,
+    Q02_GATEWAY_SERVICE_NAME,
+    Q02_GATEWAY_SERVICE_VERSION,
     Q02_HIDDEN_HOSTNAME,
     Q02_HIDDEN_HOSTNAME_IP,
     Q02_HOLD_MAIL_CONTENT,
@@ -18,12 +23,13 @@ import {
     Q02_REPORT_BODY,
     Q02_REPORT_RECIPIENT,
     Q02_REPORT_SUBJECT,
+    Q02_REPORT_TEMPLATE_CONTENT,
+    Q02_REPORT_TEMPLATE_ID,
     Q02_TARGET_IP,
     Q02_WEB_HOST,
 } from "../src/content/q02.js";
 
 import { DEV_Q01_REPLAY_ID } from "./replay-id.generated.js";
-import { Q01_REPLAY_QUEST_NAME } from "./q01-replay-quest.js";
 
 interface Q02ReplayData {
     readonly targetIp: string;
@@ -54,24 +60,28 @@ interface MailReadData {
 
 interface Q02NmapPort {
     readonly port: number;
-    readonly status: "OPEN" | "CLOSE";
+    readonly status: "OPEN" | "CLOSE" | "FORWARDED";
     readonly service: string;
     readonly version?: string;
+    readonly destination?: string;
 }
 
 const Q02_NMAP_RESULT: Q02NmapPort[] = [
-    { port: 22, status: "OPEN", service: "ssh" },
+    { port: 22, status: "CLOSE", service: "ssh" },
     { port: 443, status: "OPEN", service: "https" },
     {
         port: 8443,
-        status: "OPEN",
+        status: "FORWARDED",
         service: "https-alt",
-        version: "nginx — X-Service: gateway.internal",
+        version: Q02_GATEWAY_SERVICE_VERSION,
+        destination: Q02_GATEWAY_IP,
     },
 ];
 
 const resetQ02ShellFixtures = (): void => {
-    Shell.removeCommandData("nmap", Q02_WEB_HOST);
+    Shell.removeCommandData("nmap", Q02_TARGET_IP);
+    Shell.removeCommandData("nmap", "");
+    Shell.removeCommandData("nslookup", Q02_WEB_HOST);
     Shell.removeCommandData("nslookup", Q02_HIDDEN_HOSTNAME);
 };
 
@@ -94,7 +104,8 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
     override Group = "storyline" as const;
     override AutoStart = false;
     override AutoComplete = true;
-    override QuestsToComplete = [Q01_REPLAY_QUEST_NAME];
+    // No QuestsToComplete gate — replay quests are started independently per
+    // quest for fast iteration; production enforces the real Q01 dependency.
     override Rewards = { money: 0, xp: 0 };
     override HackhubPost = {
         content: "DEV REPLAY — Q02 live-testing fixture. Apply to replay THE ANOMALY.",
@@ -113,6 +124,7 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
             name: Q02_OBJECTIVE_IDS.scanHost,
             description: "Scan the host",
             terminalCommand: "nmap",
+            hint: "nmap only accepts an IP address. Resolve the hostname first.",
             unlocksAfter: [Q02_OBJECTIVE_IDS.checkTarget],
         },
         {
@@ -159,13 +171,26 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
         });
 
         Network.registerDomain(Q02_WEB_HOST, this.Data.targetIp);
+        // Q02_GATEWAY_IP is a raw IP used directly as a Website host, not a
+        // hostname to resolve — no Network.registerDomain mapping applies.
 
         sendAdrianMail(Q02_INCOMING_MAIL_SUBJECT, Q02_INCOMING_MAIL_CONTENT);
     }
 
     override OnObjectivesStart() {
         resetQ02ShellFixtures();
-        Shell.addCommandData("nmap", Q02_WEB_HOST, Q02_NMAP_RESULT);
+
+        Mail.registerTemplate({
+            id: Q02_REPORT_TEMPLATE_ID,
+            label: Q02_REPORT_SUBJECT,
+            title: Q02_REPORT_SUBJECT,
+            content: Q02_REPORT_TEMPLATE_CONTENT,
+            fields: ["anomalousPort", "serviceName", "issuer"],
+        });
+
+        Shell.addCommandData("nmap", Q02_TARGET_IP, Q02_NMAP_RESULT);
+        Shell.addCommandData("nmap", "", Q02_NMAP_RESULT);
+        Shell.addCommandData("nslookup", Q02_WEB_HOST, Q02_TARGET_IP);
         Shell.addCommandData(
             "nslookup",
             Q02_HIDDEN_HOSTNAME,
@@ -191,6 +216,10 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
 
             if (!this.Data.reportSubmitted) {
                 this.SetData("reportSubmitted", true);
+                sendAdrianMail(
+                    `Re: ${Q02_REPORT_SUBJECT}`,
+                    Q02_HOLD_MAIL_CONTENT,
+                );
                 this.completeObjective(Q02_OBJECTIVE_IDS.reportAnomaly);
             }
         });
@@ -199,12 +228,14 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
     override OnComplete() {
         sendAdrianMail(`Re: ${Q02_REPORT_SUBJECT}`, Q02_COMPLETION_MAIL_CONTENT);
         resetQ02ShellFixtures();
+        Mail.unregisterTemplate(Q02_REPORT_TEMPLATE_ID);
         Network.removeDomain(Q02_WEB_HOST);
         Network.destroyNetwork(this.Data.targetIp);
     }
 
     override OnAbandon() {
         resetQ02ShellFixtures();
+        Mail.unregisterTemplate(Q02_REPORT_TEMPLATE_ID);
         Network.removeDomain(Q02_WEB_HOST);
         Network.destroyNetwork(this.Data.targetIp);
     }
@@ -223,19 +254,25 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
 
         this.SetData("targetChecked", true);
         this.completeObjective(Q02_OBJECTIVE_IDS.checkTarget);
-        sendAdrianMail(`Re: ${Q02_INCOMING_MAIL_SUBJECT}`, Q02_HOLD_MAIL_CONTENT);
     }
 
     private handleTerminalCommand(data: TerminalCommandData): void {
         if (data.command === "nmap") {
             if (
                 data.args.length > 0 &&
-                !data.args.includes(Q02_WEB_HOST)
+                data.args[0] !== this.Data.targetIp
             ) {
                 return;
             }
 
-            const result = Shell.getCommandData("nmap", Q02_WEB_HOST);
+            if (!data.args.includes("-sV")) {
+                return;
+            }
+
+            const result = Shell.getCommandData(
+                "nmap",
+                data.args.length === 0 ? "" : this.Data.targetIp,
+            );
 
             if (!this.isExpectedNmapResult(result)) {
                 return;
@@ -246,7 +283,7 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
                 this.completeObjective(Q02_OBJECTIVE_IDS.scanHost);
             }
 
-            if (!this.Data.serviceIdentified && data.args.includes("-sV")) {
+            if (!this.Data.serviceIdentified) {
                 this.SetData("serviceIdentified", true);
                 this.completeObjective(Q02_OBJECTIVE_IDS.identifyService);
             }
@@ -272,16 +309,17 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
     private handleBrowserMeta(data: BrowserMetaData): void {
         if (
             this.Data.certificateInspected ||
-            !this.Data.serviceIdentified
+            !this.Data.serviceIdentified ||
+            data.hostname !== Q02_GATEWAY_IP
         ) {
             return;
         }
 
-        if (
-            data.protocol !== "https:" ||
-            data.hostname !== Q02_WEB_HOST ||
-            data.port !== "8443"
-        ) {
+        if (data.protocol !== "https:") {
+            // No mail warning here — Adrian has no way of knowing about a
+            // plain-HTTP request the player made in their own browser. The
+            // nginx-style 400 page served by Q02GatewayWebsite already
+            // explains the failure in-fiction.
             return;
         }
 
@@ -312,6 +350,10 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
     }
 
     private isAnomalyReport(subject: string, content: string): boolean {
+        if (this.isTemplateAnomalyReport(subject, content)) {
+            return true;
+        }
+
         const normalizedSubject = subject.trim().toLowerCase();
         const normalizedContent = content.trim();
 
@@ -320,5 +362,35 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
             normalizedSubject === `re: ${Q02_REPORT_SUBJECT}`.toLowerCase();
 
         return subjectMatches && normalizedContent === Q02_REPORT_BODY;
+    }
+
+    // Confirmed live: sending via the registered GoMail template does not
+    // merge {{field}} placeholders into rendered text. Instead Mail.Sent's
+    // `subject` is the template id and `content` is a raw JSON object of the
+    // field values the player typed. This validates that path directly.
+    private isTemplateAnomalyReport(subject: string, content: string): boolean {
+        if (subject !== Q02_REPORT_TEMPLATE_ID) {
+            return false;
+        }
+
+        let fields: unknown;
+
+        try {
+            fields = JSON.parse(content);
+        } catch {
+            return false;
+        }
+
+        if (!fields || typeof fields !== "object") {
+            return false;
+        }
+
+        const { anomalousPort, serviceName, issuer } = fields as Record<string, unknown>;
+
+        return (
+            anomalousPort === Q02_ANOMALOUS_PORT &&
+            serviceName === Q02_GATEWAY_SERVICE_NAME &&
+            issuer === Q02_CERTIFICATE_ISSUER
+        );
     }
 }
