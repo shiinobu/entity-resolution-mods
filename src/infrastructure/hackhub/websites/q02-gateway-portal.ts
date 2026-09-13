@@ -48,7 +48,7 @@ export class Q02GatewayWebsite extends Website {
                 }
 
                 return {
-                    title: "gateway.internal — Certificate",
+                    title: "Private Gateway",
                     description: "Unregistered internal gateway service.",
                     html: certificatePage,
                 };

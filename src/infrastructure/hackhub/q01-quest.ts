@@ -10,20 +10,31 @@ import {
 import {
     Q01_ADRIAN_EMAIL,
     Q01_CLIENT_NAME,
+    Q01_COMPLETION_MAIL_CONTENT_PRODUCTION,
     Q01_FINAL_STATE_FLAG,
     Q01_LYNX_INPUT_IP,
     Q01_LYNX_INPUT_URL,
+    Q01_LYNX_RESULT,
+    Q01_NETWORK_PORTS,
+    Q01_NMAP_RESULT,
+    Q01_OBJECTIVES,
     Q01_OBJECTIVE_IDS,
+    Q01_OPEN_PORTS,
     Q01_REPORT_BODY,
     Q01_REPORT_BODY_TEMPLATE,
-    Q01_REPORT_RECIPIENT,
     Q01_REPORT_SUBJECT,
+    Q01_REPORT_TEMPLATE_ID,
+    Q01_REPORT_TEMPLATE_LABEL,
     Q01_REWARDS,
+    Q01_SUBMIT_AUDIT_DELAY_MS,
     Q01_TARGET_IP,
     Q01_THE_CONTRACT,
     Q01_WEB_AUDIT_PATH,
+    Q01_WEB_AUDIT_URL,
     Q01_WEB_HOME_HOST,
     Q01_WEB_HOME_URL,
+    type Q01LynxResult,
+    type Q01NmapPort,
 } from "../../content/index.js";
 
 import { asId } from "../../core/index.js";
@@ -59,34 +70,6 @@ interface MailReadData {
     readonly from: string;
     readonly subject: string;
 }
-
-interface Q01NmapPort {
-    readonly port: number;
-    readonly status: "OPEN" | "CLOSE";
-    readonly service: string;
-}
-
-interface Q01LynxResult {
-    readonly ips: string[];
-    readonly address: string[];
-    readonly additional?: string[];
-}
-
-const Q01_NMAP_RESULT: Q01NmapPort[] = [
-    { port: 22, status: "CLOSE", service: "ssh" },
-    { port: 80, status: "CLOSE", service: "http" },
-    { port: 443, status: "OPEN", service: "https" },
-];
-
-const Q01_LYNX_RESULT: Q01LynxResult = {
-    ips: [Q01_TARGET_IP],
-    address: [Q01_WEB_HOME_URL],
-    additional: [
-        Q01_CLIENT_NAME,
-        "Jakarta Operations",
-        "Canonical public web host discovered from the target IP.",
-    ],
-};
 
 const resetQ01ShellFixtures = (): void => {
     Shell.removeCommandData("nmap", Q01_TARGET_IP);
@@ -149,23 +132,6 @@ const Q01_INCOMING_MAIL_CONTENT = [
     "Internal access",
     "Credential attacks",
     "",
-    "Format report audit:",
-    `Subject: ${Q01_REPORT_SUBJECT}`,
-    "",
-    Q01_REPORT_BODY_TEMPLATE,
-    "",
-    "— Adrian",
-].join("\n");
-
-const Q01_COMPLETION_MAIL_CONTENT = [
-    "Looks clean.",
-    "",
-    "Client should be happy.",
-    "",
-    "Payment's on the way.",
-    "",
-    "I'll let you know if they need anything else.",
-    "",
     "— Adrian",
 ].join("\n");
 
@@ -203,42 +169,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         },
     };
 
-    override Objectives = [
-        {
-            name: Q01_OBJECTIVE_IDS.reviewScope,
-            description: "Review audit scope",
-        },
-        {
-            name: Q01_OBJECTIVE_IDS.scanNetwork,
-            description: "Scan the ip target",
-            terminalCommand: "nmap",
-            unlocksAfter: [Q01_OBJECTIVE_IDS.reviewScope],
-        },
-        {
-            name: Q01_OBJECTIVE_IDS.identifyServices,
-            description: "Identify the exposed web presence",
-            terminalCommand: "lynx",
-            unlocksAfter: [Q01_OBJECTIVE_IDS.scanNetwork],
-        },
-        {
-            name: Q01_OBJECTIVE_IDS.enumeratePaths,
-            description: "Enumerate hidden pages",
-            terminalCommand: "dirhunter",
-            unlocksAfter: [Q01_OBJECTIVE_IDS.identifyServices],
-        },
-        {
-            name: Q01_OBJECTIVE_IDS.basicVulnerabilityChecks,
-            description: "Perform basic vulnerability checks",
-            hint: "Inspect the authorized security page you discovered.",
-            unlocksAfter: [Q01_OBJECTIVE_IDS.enumeratePaths],
-        },
-        {
-            name: Q01_OBJECTIVE_IDS.submitAudit,
-            description: "Submit audit report",
-            hint: `Reply to ${Q01_REPORT_RECIPIENT} with subject \"${Q01_REPORT_SUBJECT}\". Fill in the company, open-port, and url values you discovered.`,
-            unlocksAfter: [Q01_OBJECTIVE_IDS.basicVulnerabilityChecks],
-        },
-    ];
+    override Objectives = Q01_OBJECTIVES;
 
     override CreateData(): Q01QuestData {
         return {
@@ -258,26 +189,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         Network.createSubnetNetwork({
             ip: this.Data.targetIp,
             type: Network.Type.Router,
-            ports: [
-                {
-                    external: 22,
-                    internal: 22,
-                    active: false,
-                    service: "ssh",
-                },
-                {
-                    external: 80,
-                    internal: 80,
-                    active: false,
-                    service: "http",
-                },
-                {
-                    external: 443,
-                    internal: 443,
-                    active: true,
-                    service: "https",
-                },
-            ],
+            ports: Q01_NETWORK_PORTS,
             users: [],
             children: [],
         });
@@ -289,6 +201,14 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
 
     override OnObjectivesStart() {
         registerQ01ShellFixtures();
+
+        Mail.registerTemplate({
+            id: Q01_REPORT_TEMPLATE_ID,
+            label: Q01_REPORT_TEMPLATE_LABEL,
+            title: Q01_REPORT_SUBJECT,
+            content: Q01_REPORT_BODY_TEMPLATE,
+            fields: ["company", "ports", "url"],
+        });
 
         this.Events.on("Mail.Read", (data) => {
             this.handleMailRead(data);
@@ -313,7 +233,9 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
 
             if (!this.Data.reportSubmitted) {
                 this.SetData("reportSubmitted", true);
-                this.completeObjective(Q01_OBJECTIVE_IDS.submitAudit);
+                setTimeout(() => {
+                    this.completeObjective(Q01_OBJECTIVE_IDS.submitAudit);
+                }, Q01_SUBMIT_AUDIT_DELAY_MS);
             }
         });
     }
@@ -374,8 +296,14 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             });
         }
 
-        sendAdrianMail("Re: Security Audit — Jakarta", Q01_COMPLETION_MAIL_CONTENT);
+        sendAdrianMail("Re: Security Audit — Jakarta", Q01_COMPLETION_MAIL_CONTENT_PRODUCTION);
         resetQ01ShellFixtures();
+        // Deliberately NOT calling Mail.unregisterTemplate here — confirmed
+        // live that GoMail re-renders a sent mail's history entry from its
+        // template at view time, keyed by template id. Unregistering breaks
+        // the pretty rendering of the player's own already-sent mail
+        // retroactively, turning it into raw JSON. Leaving templates
+        // registered is harmless (a small, permanent compose-dropdown entry).
         Network.removeDomain(Q01_WEB_HOME_HOST);
         Network.destroyNetwork(this.Data.targetIp);
         gameRuntime.persistence.save();
@@ -536,6 +464,10 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
     }
 
     private isAuditReport(subject: string, content: string): boolean {
+        if (this.isTemplateAuditReport(subject, content)) {
+            return true;
+        }
+
         const normalizedSubject = subject.trim().toLowerCase();
         const normalizedContent = content.trim();
 
@@ -544,5 +476,35 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             normalizedSubject === `re: ${Q01_REPORT_SUBJECT}`.toLowerCase();
 
         return subjectMatches && normalizedContent === Q01_REPORT_BODY;
+    }
+
+    // Confirmed live (via Q02): sending via the registered GoMail template
+    // does not merge {{field}} placeholders into rendered text. Instead
+    // Mail.Sent's `subject` is the template id and `content` is a raw JSON
+    // object of the field values the player typed.
+    private isTemplateAuditReport(subject: string, content: string): boolean {
+        if (subject !== Q01_REPORT_TEMPLATE_ID) {
+            return false;
+        }
+
+        let fields: unknown;
+
+        try {
+            fields = JSON.parse(content);
+        } catch {
+            return false;
+        }
+
+        if (!fields || typeof fields !== "object") {
+            return false;
+        }
+
+        const { company, ports, url } = fields as Record<string, unknown>;
+
+        return (
+            company === Q01_CLIENT_NAME &&
+            ports === Q01_OPEN_PORTS &&
+            url === Q01_WEB_AUDIT_URL
+        );
     }
 }

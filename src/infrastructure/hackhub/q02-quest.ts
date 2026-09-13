@@ -12,26 +12,30 @@ import {
     Q02_ANOMALOUS_PORT,
     Q02_CERTIFICATE_ISSUER,
     Q02_CLIENT_NAME,
-    Q02_COMPLETION_MAIL_CONTENT,
+    Q02_COMPLETION_DELAY_MS,
+    Q02_COMPLETION_MAIL_CONTENT_PRODUCTION,
     Q02_FINAL_STATE_FLAG,
     Q02_GATEWAY_IP,
     Q02_GATEWAY_SERVICE_NAME,
-    Q02_GATEWAY_SERVICE_VERSION,
     Q02_HIDDEN_HOSTNAME,
     Q02_HIDDEN_HOSTNAME_IP,
     Q02_HOLD_MAIL_CONTENT,
     Q02_INCOMING_MAIL_CONTENT,
     Q02_INCOMING_MAIL_SUBJECT,
+    Q02_NETWORK_PORTS,
+    Q02_NMAP_RESULT,
+    Q02_OBJECTIVES,
     Q02_OBJECTIVE_IDS,
     Q02_REPORT_BODY,
-    Q02_REPORT_RECIPIENT,
     Q02_REPORT_SUBJECT,
     Q02_REPORT_TEMPLATE_CONTENT,
     Q02_REPORT_TEMPLATE_ID,
+    Q02_REPORT_TEMPLATE_LABEL,
     Q02_REWARDS,
     Q02_TARGET_IP,
     Q02_THE_ANOMALY,
     Q02_WEB_HOST,
+    type Q02NmapPort,
 } from "../../content/index.js";
 
 import { asId } from "../../core/index.js";
@@ -63,26 +67,6 @@ interface MailReadData {
     readonly from: string;
     readonly subject: string;
 }
-
-interface Q02NmapPort {
-    readonly port: number;
-    readonly status: "OPEN" | "CLOSE" | "FORWARDED";
-    readonly service: string;
-    readonly version?: string;
-    readonly destination?: string;
-}
-
-const Q02_NMAP_RESULT: Q02NmapPort[] = [
-    { port: 22, status: "CLOSE", service: "ssh" },
-    { port: 443, status: "OPEN", service: "https" },
-    {
-        port: 8443,
-        status: "FORWARDED",
-        service: "https-alt",
-        version: Q02_GATEWAY_SERVICE_VERSION,
-        destination: Q02_GATEWAY_IP,
-    },
-];
 
 const resetQ02ShellFixtures = (): void => {
     Shell.removeCommandData("nmap", Q02_TARGET_IP);
@@ -138,35 +122,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         },
     };
 
-    override Objectives = [
-        {
-            name: Q02_OBJECTIVE_IDS.checkTarget,
-            description: "Check the new target",
-        },
-        {
-            name: Q02_OBJECTIVE_IDS.scanHost,
-            description: "Scan the host",
-            terminalCommand: "nmap",
-            hint: "nmap only accepts an IP address. Resolve the hostname first.",
-            unlocksAfter: [Q02_OBJECTIVE_IDS.checkTarget],
-        },
-        {
-            name: Q02_OBJECTIVE_IDS.identifyService,
-            description: "Identify the service",
-            unlocksAfter: [Q02_OBJECTIVE_IDS.scanHost],
-        },
-        {
-            name: Q02_OBJECTIVE_IDS.inspectCertificate,
-            description: "Inspect the certificate",
-            unlocksAfter: [Q02_OBJECTIVE_IDS.identifyService],
-        },
-        {
-            name: Q02_OBJECTIVE_IDS.reportAnomaly,
-            description: "Report the anomaly",
-            hint: `Reply to ${Q02_REPORT_RECIPIENT} with your findings.`,
-            unlocksAfter: [Q02_OBJECTIVE_IDS.inspectCertificate],
-        },
-    ];
+    override Objectives = Q02_OBJECTIVES;
 
     override CreateData(): Q02QuestData {
         return {
@@ -186,11 +142,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         Network.createSubnetNetwork({
             ip: this.Data.targetIp,
             type: Network.Type.Router,
-            ports: [
-                { external: 22, internal: 22, active: true, service: "ssh" },
-                { external: 443, internal: 443, active: true, service: "https" },
-                { external: 8443, internal: 8443, active: true, service: "https-alt" },
-            ],
+            ports: Q02_NETWORK_PORTS,
             users: [],
             children: [],
         });
@@ -208,7 +160,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
 
         Mail.registerTemplate({
             id: Q02_REPORT_TEMPLATE_ID,
-            label: Q02_REPORT_SUBJECT,
+            label: Q02_REPORT_TEMPLATE_LABEL,
             title: Q02_REPORT_SUBJECT,
             content: Q02_REPORT_TEMPLATE_CONTENT,
             fields: ["anomalousPort", "serviceName", "issuer"],
@@ -233,11 +185,18 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
 
             if (!this.Data.reportSubmitted) {
                 this.SetData("reportSubmitted", true);
+
+                // Sent synchronously, not inside setTimeout — confirmed live
+                // that Mail.send does not fire reliably from inside a
+                // setTimeout callback, unlike completeObjective, which does.
                 sendAdrianMail(
                     `Re: ${Q02_REPORT_SUBJECT}`,
                     Q02_HOLD_MAIL_CONTENT,
                 );
-                this.completeObjective(Q02_OBJECTIVE_IDS.reportAnomaly);
+
+                setTimeout(() => {
+                    this.completeObjective(Q02_OBJECTIVE_IDS.reportAnomaly);
+                }, Q02_COMPLETION_DELAY_MS);
             }
         });
     }
@@ -312,9 +271,14 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
             });
         }
 
-        sendAdrianMail(`Re: ${Q02_REPORT_SUBJECT}`, Q02_COMPLETION_MAIL_CONTENT);
+        sendAdrianMail(`Re: ${Q02_REPORT_SUBJECT}`, Q02_COMPLETION_MAIL_CONTENT_PRODUCTION);
         resetQ02ShellFixtures();
-        Mail.unregisterTemplate(Q02_REPORT_TEMPLATE_ID);
+        // Deliberately NOT calling Mail.unregisterTemplate here — confirmed
+        // live that GoMail re-renders a sent mail's history entry from its
+        // template at view time, keyed by template id. Unregistering breaks
+        // the pretty rendering of the player's own already-sent mail
+        // retroactively, turning it into raw JSON. Leaving templates
+        // registered is harmless (a small, permanent compose-dropdown entry).
         Network.removeDomain(Q02_WEB_HOST);
         Network.destroyNetwork(this.Data.targetIp);
         gameRuntime.persistence.save();
@@ -322,7 +286,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
 
     override OnAbandon() {
         resetQ02ShellFixtures();
-        Mail.unregisterTemplate(Q02_REPORT_TEMPLATE_ID);
         Network.removeDomain(Q02_WEB_HOST);
         Network.destroyNetwork(this.Data.targetIp);
     }

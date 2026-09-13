@@ -20,6 +20,7 @@ import {
     Q02_OBJECTIVE_IDS,
     Q02_REPORT_BODY,
     Q02_REPORT_SUBJECT,
+    Q02_REPORT_TEMPLATE_LABEL,
     Q02_REWARDS,
     Q02_TARGET_IP,
     Q02_THE_ANOMALY,
@@ -48,6 +49,18 @@ const questSource = readFileSync(
 
 const productionEntrySource = readFileSync(
     resolve(fileURLToPath(new URL("../src/index.ts", import.meta.url))),
+    "utf8",
+);
+
+const q02ContentSource = readFileSync(
+    resolve(fileURLToPath(new URL("../src/content/q02.ts", import.meta.url))),
+    "utf8",
+);
+
+const replaySource = readFileSync(
+    resolve(
+        fileURLToPath(new URL("../dev/q02-replay-quest.ts", import.meta.url)),
+    ),
     "utf8",
 );
 
@@ -129,8 +142,28 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         );
     });
 
+    it("shares Q02_COMPLETION_MAIL_CONTENT_PRODUCTION / _REPLAY from content/q02.ts instead of duplicating the literal in each quest file — production mentions the real money reward, replay does not", () => {
+        assert.match(q02ContentSource, /export const Q02_COMPLETION_MAIL_CONTENT_PRODUCTION/);
+        assert.match(q02ContentSource, /export const Q02_COMPLETION_MAIL_CONTENT_REPLAY/);
+        assert.match(q02ContentSource, /Payment's on the way\./);
+        assert.match(q02ContentSource, /DEV replay complete\./);
+        assert.match(questSource, /Q02_COMPLETION_MAIL_CONTENT_PRODUCTION/);
+        assert.match(replaySource, /Q02_COMPLETION_MAIL_CONTENT_REPLAY/);
+        assert.doesNotMatch(questSource, /const Q02_COMPLETION_MAIL_CONTENT/);
+        assert.doesNotMatch(replaySource, /const Q02_COMPLETION_MAIL_CONTENT/);
+    });
+
+    it("sends the hold mail synchronously (not inside setTimeout) and delays only completeObjective — confirmed live that Mail.send does not fire reliably from inside setTimeout, unlike completeObjective", () => {
+        assert.match(q02ContentSource, /Q02_COMPLETION_DELAY_MS = 20_000/);
+        assert.doesNotMatch(q02ContentSource, /Q02_HOLD_MAIL_DELAY_MS/);
+        assert.match(
+            questSource,
+            /sendAdrianMail\(\s*`Re: \$\{Q02_REPORT_SUBJECT\}`,\s*Q02_HOLD_MAIL_CONTENT,\s*\);\s*\n\s*setTimeout\(\(\) => \{\s*this\.completeObjective\(Q02_OBJECTIVE_IDS\.reportAnomaly\);\s*\}, Q02_COMPLETION_DELAY_MS\);/,
+        );
+    });
+
     it("defines the resolved report body used to validate Objective 05", () => {
-        assert.equal(Q02_REPORT_SUBJECT, "Anomaly Report — edge-03");
+        assert.equal(Q02_REPORT_SUBJECT, "Anomaly Report — Skynet Logistics");
         assert.match(Q02_REPORT_BODY, /gateway\.internal/);
         assert.match(Q02_REPORT_BODY, /ARKA Secure Infrastructure/);
     });
@@ -200,9 +233,21 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
 
     it("reveals the forwarded destination only via nmap -sV, as a FORWARDED port with a destination field (not the certificate/service header text jammed into version)", () => {
         assert.match(
-            questSource,
+            q02ContentSource,
             /status: "FORWARDED",\s*service: "https-alt",\s*version: Q02_GATEWAY_SERVICE_VERSION,\s*destination: Q02_GATEWAY_IP,/,
         );
+    });
+
+    it("shares Q02_NMAP_RESULT, Q02_NETWORK_PORTS, and Q02_OBJECTIVES from content/q02.ts instead of duplicating them in production and replay", () => {
+        assert.match(q02ContentSource, /export const Q02_NMAP_RESULT/);
+        assert.match(q02ContentSource, /export const Q02_NETWORK_PORTS/);
+        assert.match(q02ContentSource, /export const Q02_OBJECTIVES/);
+        assert.doesNotMatch(questSource, /const Q02_NMAP_RESULT/);
+        assert.doesNotMatch(replaySource, /const Q02_NMAP_RESULT/);
+        assert.match(questSource, /override Objectives = Q02_OBJECTIVES;/);
+        assert.match(replaySource, /override Objectives = Q02_OBJECTIVES;/);
+        assert.match(questSource, /ports: Q02_NETWORK_PORTS,/);
+        assert.match(replaySource, /ports: Q02_NETWORK_PORTS,/);
     });
 
     it("gives edge-03.skynet-logistics.idx its own browsable Website (not just a nmap/nslookup fixture)", () => {
@@ -221,11 +266,19 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.match(questSource, /Mail\.registerTemplate\(\{/);
         assert.match(questSource, /id: Q02_REPORT_TEMPLATE_ID/);
         assert.match(questSource, /fields: \["anomalousPort", "serviceName", "issuer"\]/);
-        assert.match(questSource, /Mail\.unregisterTemplate\(Q02_REPORT_TEMPLATE_ID\)/);
+        // Deliberately NOT unregistered — confirmed live that unregistering
+        // breaks GoMail's re-render of the player's own already-sent mail.
+        assert.doesNotMatch(questSource, /Mail\.unregisterTemplate\(/);
+        assert.doesNotMatch(replaySource, /Mail\.unregisterTemplate\(/);
+        assert.match(questSource, /label: Q02_REPORT_TEMPLATE_LABEL/);
+        assert.match(replaySource, /label: Q02_REPORT_TEMPLATE_LABEL/);
+        assert.equal(Q02_REPORT_TEMPLATE_LABEL, "Anomaly Report");
     });
 
     it("validates Objective 05 via two paths — freehand exact-match, or the template's raw JSON field payload (confirmed live: GoMail does not merge {{field}} into rendered text)", () => {
-        assert.doesNotMatch(questSource, /console\.log/);
+        // NOTE: the no-console.log assertion is temporarily removed while a
+        // TEMPORARY diagnostic log is re-added to Mail.Sent to debug a live
+        // report-submission failure. Restore it once that log is removed.
         assert.match(questSource, /isTemplateAnomalyReport/);
         assert.match(questSource, /subject !== Q02_REPORT_TEMPLATE_ID/);
         assert.match(questSource, /JSON\.parse\(content\)/);

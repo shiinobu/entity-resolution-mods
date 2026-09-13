@@ -1,7 +1,9 @@
 import {
     RegisterWebsite,
     Website,
-    type WebsitePageDefinition,
+    type DynamicWebsitePageDefinition,
+    type PageContext,
+    type PageMetadata,
 } from "@hotbunny/hackhub-content-sdk";
 
 import {
@@ -14,18 +16,31 @@ import {
 
 import forbiddenPage from "./q01-forbidden.html";
 import homePage from "./q01-home.html";
+import httpErrorPage from "./q01-http-error.html";
 import securityPage from "./q01-security.html";
 
+// Only HTTPS (443) is open per Q01_NMAP_RESULT — port 80 is CLOSE. A dynamic
+// page (evaluated mod-side, not in the page's sandboxed iframe) reproduces
+// nginx's real "400 Bad Request" rejection on plain HTTP instead of serving
+// content, matching Q02's DynamicWebsitePageDefinition pattern.
 const page = (
     path: string,
     html: string,
     title: string,
     description: string,
-): WebsitePageDefinition => ({
+): DynamicWebsitePageDefinition => ({
     path,
-    title,
-    description,
-    html,
+    metadata: (context: PageContext): PageMetadata => {
+        if (!context.url.startsWith("https:")) {
+            return {
+                title: "400 Bad Request",
+                description: "Insecure request rejected.",
+                html: httpErrorPage,
+            };
+        }
+
+        return { title, description, html };
+    },
 });
 
 // Experimental path-based redesign: one public host, several pages
@@ -37,7 +52,7 @@ export class Q01SkynetLogisticsWebsite extends Website {
     Host = Q01_WEB_HOME_HOST;
     Icon = "";
 
-    Pages: WebsitePageDefinition[] = [
+    Pages: DynamicWebsitePageDefinition[] = [
         page(
             "/",
             homePage,

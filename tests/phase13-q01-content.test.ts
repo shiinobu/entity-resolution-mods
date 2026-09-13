@@ -10,7 +10,9 @@ import {
     Q01_FINAL_STATE_FLAG,
     Q01_LYNX_INPUT_IP,
     Q01_LYNX_INPUT_URL,
+    Q01_OBJECTIVES,
     Q01_OBJECTIVE_IDS,
+    Q01_OPEN_PORTS,
     Q01_RECON_INPUT,
     Q01_RECON_INPUT_VARIANTS,
     Q01_RECON_PROFILE,
@@ -20,6 +22,8 @@ import {
     Q01_REPORT_BODY_TEMPLATE,
     Q01_REPORT_RECIPIENT,
     Q01_REPORT_SUBJECT,
+    Q01_REPORT_TEMPLATE_ID,
+    Q01_REPORT_TEMPLATE_LABEL,
     Q01_REWARDS,
     Q01_TARGET_IP,
     Q01_THE_CONTRACT,
@@ -53,6 +57,11 @@ const questSource = readFileSync(
     "utf8",
 );
 
+const q01ContentSource = readFileSync(
+    resolve(fileURLToPath(new URL("../src/content/q01.ts", import.meta.url))),
+    "utf8",
+);
+
 const reconCommandSource = readFileSync(
     resolve(
         fileURLToPath(
@@ -81,6 +90,11 @@ const productionEntrySource = readFileSync(
 
 const replayEntrySource = readFileSync(
     resolve(fileURLToPath(new URL("../dev/q01-replay-entry.ts", import.meta.url))),
+    "utf8",
+);
+
+const replayQuestSource = readFileSync(
+    resolve(fileURLToPath(new URL("../dev/q01-replay-quest.ts", import.meta.url))),
     "utf8",
 );
 
@@ -163,10 +177,10 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         );
     });
 
-    it("keeps the Lynx address as one runtime list entry and resets stale fixtures before registration", () => {
-        assert.match(questSource, /address:\s*\[Q01_WEB_HOME_URL\],/);
+    it("keeps the Lynx address as one runtime list entry and resets stale fixtures before registration (fixture data now lives in content/q01.ts, shared by production and replay)", () => {
+        assert.match(q01ContentSource, /address:\s*\[Q01_WEB_HOME_URL\],/);
         assert.doesNotMatch(
-            questSource,
+            q01ContentSource,
             /Q01_WEB_HOME_URL\s+as unknown as string\[\]/,
         );
         assert.match(
@@ -181,9 +195,18 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
 
     it("populates the Lynx 'additional' OSINT section instead of leaving it empty", () => {
         assert.match(
-            questSource,
+            q01ContentSource,
             /additional:\s*\[\s*Q01_CLIENT_NAME,/,
         );
+    });
+
+    it("shares Q01_NMAP_RESULT, Q01_LYNX_RESULT, and Q01_NETWORK_PORTS from content/q01.ts instead of duplicating them in production and replay", () => {
+        assert.match(q01ContentSource, /export const Q01_NMAP_RESULT/);
+        assert.match(q01ContentSource, /export const Q01_LYNX_RESULT/);
+        assert.match(q01ContentSource, /export const Q01_NETWORK_PORTS/);
+        assert.doesNotMatch(questSource, /const Q01_NMAP_RESULT/);
+        assert.doesNotMatch(questSource, /const Q01_LYNX_RESULT/);
+        assert.match(questSource, /ports: Q01_NETWORK_PORTS,/);
     });
 
     it("keeps the Q01 subfinders command registered as a standalone tool (no longer gates Q01 progression)", () => {
@@ -251,17 +274,80 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         );
     });
 
+    it("shares Q01_OBJECTIVES between production and replay with no hint on submitAudit (GoMail compose template teaches the format interactively instead)", () => {
+        assert.match(q01ContentSource, /export const Q01_OBJECTIVES/);
+        assert.match(questSource, /override Objectives = Q01_OBJECTIVES;/);
+        assert.match(replayQuestSource, /override Objectives = Q01_OBJECTIVES;/);
+
+        const submitAudit = Q01_OBJECTIVES.find(
+            (objective) => objective.name === Q01_OBJECTIVE_IDS.submitAudit,
+        );
+        assert.ok(submitAudit, "expected to find the submitAudit objective");
+        assert.equal((submitAudit as { hint?: string }).hint, undefined);
+    });
+
+    it("registers a GoMail compose template for the audit report in both production and replay, and validates its raw JSON field payload", () => {
+        assert.match(questSource, /Mail\.registerTemplate\(\{/);
+        assert.match(questSource, /id: Q01_REPORT_TEMPLATE_ID/);
+        assert.match(questSource, /fields: \["company", "ports", "url"\]/);
+        assert.match(replayQuestSource, /Mail\.registerTemplate\(\{/);
+        // Deliberately NOT unregistered — confirmed live that unregistering
+        // breaks GoMail's re-render of the player's own already-sent mail.
+        assert.doesNotMatch(questSource, /Mail\.unregisterTemplate\(/);
+        assert.doesNotMatch(replayQuestSource, /Mail\.unregisterTemplate\(/);
+        assert.match(questSource, /label: Q01_REPORT_TEMPLATE_LABEL/);
+        assert.match(replayQuestSource, /label: Q01_REPORT_TEMPLATE_LABEL/);
+        assert.equal(Q01_REPORT_TEMPLATE_LABEL, "Audit Report");
+
+        assert.match(questSource, /isTemplateAuditReport/);
+        assert.match(questSource, /subject !== Q01_REPORT_TEMPLATE_ID/);
+        assert.match(questSource, /JSON\.parse\(content\)/);
+        assert.match(
+            questSource,
+            /company === Q01_CLIENT_NAME &&\s*ports === Q01_OPEN_PORTS &&\s*url === Q01_WEB_AUDIT_URL/,
+        );
+        assert.equal(Q01_OPEN_PORTS, "443");
+    });
+
+    it("delays submitAudit completion 7s after the report is validated, so the completion mail + reward don't land the same tick", () => {
+        assert.match(q01ContentSource, /Q01_SUBMIT_AUDIT_DELAY_MS = 7_000/);
+        assert.match(
+            questSource,
+            /setTimeout\(\(\) => \{\s*this\.completeObjective\(Q01_OBJECTIVE_IDS\.submitAudit\);\s*\}, Q01_SUBMIT_AUDIT_DELAY_MS\);/,
+        );
+        assert.match(
+            replayQuestSource,
+            /setTimeout\(\(\) => \{\s*this\.completeObjective\(Q01_OBJECTIVE_IDS\.submitAudit\);\s*\}, Q01_SUBMIT_AUDIT_DELAY_MS\);/,
+        );
+    });
+
+    it("shares Q01_COMPLETION_MAIL_CONTENT_PRODUCTION / _REPLAY from content/q01.ts instead of duplicating the literal in each quest file — production mentions the real money reward, replay does not", () => {
+        assert.match(q01ContentSource, /export const Q01_COMPLETION_MAIL_CONTENT_PRODUCTION/);
+        assert.match(q01ContentSource, /export const Q01_COMPLETION_MAIL_CONTENT_REPLAY/);
+        assert.match(q01ContentSource, /Payment's on the way\./);
+        assert.match(q01ContentSource, /DEV replay complete\./);
+        assert.match(questSource, /Q01_COMPLETION_MAIL_CONTENT_PRODUCTION/);
+        assert.match(replayQuestSource, /Q01_COMPLETION_MAIL_CONTENT_REPLAY/);
+        assert.doesNotMatch(questSource, /const Q01_COMPLETION_MAIL_CONTENT/);
+        assert.doesNotMatch(replayQuestSource, /const Q01_COMPLETION_MAIL_CONTENT/);
+    });
+
+    it("no longer dumps the report format as plain text inside the incoming mail — the compose template teaches it interactively", () => {
+        assert.doesNotMatch(questSource, /Format report audit:/);
+        assert.doesNotMatch(replayQuestSource, /Format report audit:/);
+    });
+
     it("defines the canonical email identity and player-facing report template", () => {
         assert.equal(Q01_ADRIAN_EMAIL, "adrian.cole@entityresolution.lock");
         assert.equal(Q01_REPORT_RECIPIENT, Q01_ADRIAN_EMAIL);
         assert.equal(Q01_REPORT_SUBJECT, "Security Audit — Jakarta");
         assert.equal(
             Q01_REPORT_BODY_TEMPLATE,
-            "Target: <COMPANY>\nOpen Ports: <PORTS>\nUrl: <URL>\n\nNo critical vulnerabilities identified.\nFurther internal assessment is recommended.",
+            "Target: {{company}}\n\nFindings:\n- Open ports: {{ports}}\n- Public web presence: {{url}}\n- No critical vulnerabilities identified.\n\nRecommendation: Further internal assessment is recommended.",
         );
         assert.equal(
             Q01_REPORT_BODY,
-            `Target: Skynet Logistics\nOpen Ports: 443\nUrl: ${Q01_WEB_AUDIT_URL}\n\nNo critical vulnerabilities identified.\nFurther internal assessment is recommended.`,
+            `Target: Skynet Logistics\n\nFindings:\n- Open ports: 443\n- Public web presence: ${Q01_WEB_AUDIT_URL}\n- No critical vulnerabilities identified.\n\nRecommendation: Further internal assessment is recommended.`,
         );
     });
 

@@ -89,4 +89,10 @@ describe("Phase 13 Q01 — web path boundary (experimental path-based redesign, 
         assert.doesNotMatch(homePage, /href=["']\/security["']/);
         assert.match(homePage, /Skynet Logistics/);
     });
+
+    it("serves every page mod-side via a dynamic page keyed on request protocol, reproducing nginx's 400 rejection on plain HTTP (only 443 is open per Q01_NMAP_RESULT)", () => {
+        assert.match(websiteRegistration, /DynamicWebsitePageDefinition/);
+        assert.match(websiteRegistration, /context\.url\.startsWith\("https:"\)/);
+        assert.match(websiteRegistration, /q01-http-error\.html/);
+    });
 });

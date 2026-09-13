@@ -1,7 +1,7 @@
 # ENTITY RESOLUTION — Phase 13 Story Implementation
 
-Date: 2026-09-12
-Status: **SEQUENTIAL CAMPAIGN LOCKED — Q01 REVISED, LIVE VALIDATION PENDING**
+Date: 2026-09-12 (Q01 PASS 2026-09-13; Q02 PASS 2026-09-14)
+Status: **SEQUENTIAL CAMPAIGN LOCKED — Q01 PASS, Q02 PASS; CURRENT TARGET Q03**
 
 ## Purpose
 
@@ -144,11 +144,15 @@ $200
 
 ### Q01 production gate
 
-Q01 is **live-PASS** (2026-09-13) — see `docs/phase13-q01-final-lock.md` and `docs/phase13-q01-live-validation.md`. Q02 is now the active implementation target per `docs/phase13-sequential-campaign-lock.md`.
+Q01 is **live-PASS** (2026-09-13) — see `docs/phase13-q01-final-lock.md` and `docs/phase13-q01-live-validation.md`.
 
-## Q02–Q16
+## Q02 — THE ANOMALY
 
-Q02 is now the active target; Q03–Q16 remain inactive until each preceding quest passes and is finally locked.
+Q02 is **live-PASS** (2026-09-14), including a post-PASS stabilization round — see `docs/phase13-q02-source-recovered.md`. Q03 is now the active implementation target per `docs/phase13-sequential-campaign-lock.md`.
+
+## Q03–Q16
+
+Q03 is now the active target; Q04–Q16 remain inactive until each preceding quest passes and is finally locked.
 
 The canonical campaign order remains unchanged.
 

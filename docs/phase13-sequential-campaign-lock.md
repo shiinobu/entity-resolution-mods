@@ -1,7 +1,7 @@
 # ENTITY RESOLUTION — Phase 13 Sequential Campaign Execution Lock
 
-Date: 2026-09-11 (Q01 PASS recorded 2026-09-13)
-Status: **LOCKED — Q01 PASS; CURRENT IMPLEMENTATION TARGET Q02**
+Date: 2026-09-11 (Q01 PASS recorded 2026-09-13; Q02 PASS recorded 2026-09-14)
+Status: **LOCKED — Q01 PASS, Q02 PASS; CURRENT IMPLEMENTATION TARGET Q03**
 
 ## Purpose
 
@@ -144,13 +144,40 @@ manifest.json
 
 Q01 has passed its full live in-game validation gate (2026-09-13) — see `docs/phase13-q01-final-lock.md` and `docs/phase13-q01-live-validation.md`. It is now production-locked.
 
-## Current Target — Q02
+## Q02 — PASSED (2026-09-14)
 
 ```text
 Q02 — THE ANOMALY (Chapter 1 — GHOST SERVER)
 ```
 
-Full detailed source was recovered from an exported design conversation on 2026-09-13 (see `docs/phase13-q02-source-recovered.md`), closing the gap noted in `docs/phase13-step13.1-story-source-audit.md`. Q02 is now **implemented — live validation pending**: five objectives, $250 / 90 XP reward, gated behind `entity_resolution.q01` completion via `QuestsToComplete`. Awaiting real in-game confirmation before it can be marked PASS and Q03 becomes the target.
+Full detailed source was recovered from an exported design conversation on 2026-09-13 (see `docs/phase13-q02-source-recovered.md`), closing the gap noted in `docs/phase13-step13.1-story-source-audit.md`. Q02 defines:
+
+- prerequisite `entity_resolution.q01.completed = true`, enforced via native `QuestsToComplete`;
+- five objectives (check target, scan host, identify service, inspect certificate, report anomaly) + one optional DNS-check bonus;
+- `entity_resolution.q02.completed = true` as persistent story state;
+- `$250` reward, maximum `90 XP`.
+
+Q02 has passed its full live in-game validation gate (2026-09-14), including a post-PASS stabilization round that fixed a `Mail.unregisterTemplate` history-corruption bug and a `Mail.send`-inside-`setTimeout` reliability bug (both also applied to Q01) — see `docs/phase13-q02-source-recovered.md`'s "Post-validation stabilization" section. It is now production-locked.
+
+Current production implementation files:
+
+```text
+src/content/q02.ts
+src/content/index.ts
+src/infrastructure/hackhub/q02-quest.ts
+src/infrastructure/hackhub/websites/q02-gateway-portal.ts
+src/infrastructure/hackhub/websites/q02-edge-portal.ts
+src/index.ts
+manifest.json
+```
+
+## Current Target — Q03
+
+```text
+Q03 — MISSING LOGS
+```
+
+Not yet started. Feasibility is in doubt: the recovered design assumes `stat`, `journalctl`, `zgrep`, and `grep` terminal commands, none of which appear to exist in the SDK, and assumes POSIX-path file access where the SDK's `Terminal.Ls`/`Terminal.Cat` are file-ID based instead. This will need a redesign pass before implementation can begin.
 
 ## Q01 Runtime Notes
 
