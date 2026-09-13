@@ -1,7 +1,9 @@
 # ENTITY RESOLUTION — Q01 Lynx/Subdomain Amendment
 
 Date: 2026-09-12
-Status: **IMPLEMENTED — LIVE VALIDATION PENDING**
+Status: **SUPERSEDED**
+
+This historical document described the four-subdomain web model (`www`/`portal`/`status`/`security` as separate hostnames) and the DSS-recon-based enumeration command. Live testing on 2026-09-13 replaced this with a single-host, path-based model (`www.skynet-logistics.idx` with `/`, `/portal`, `/status`, `/security`) discovered via the native `dirhunter` command. See `docs/phase13-q01-final-lock.md` for the active, live-validated contract.
 
 ## Authority
 

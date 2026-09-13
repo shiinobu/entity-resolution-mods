@@ -144,11 +144,11 @@ $200
 
 ### Q01 production gate
 
-Q01 is **not yet live-PASS**. The revised package must first pass the full real-HackHub scenario. Once that succeeds, `docs/phase13-q01-final-lock.md` can be marked production-PASS and Q02 may begin.
+Q01 is **live-PASS** (2026-09-13) — see `docs/phase13-q01-final-lock.md` and `docs/phase13-q01-live-validation.md`. Q02 is now the active implementation target per `docs/phase13-sequential-campaign-lock.md`.
 
 ## Q02–Q16
 
-Inactive until Q01 passes and is finally locked.
+Q02 is now the active target; Q03–Q16 remain inactive until each preceding quest passes and is finally locked.
 
 The canonical campaign order remains unchanged.
 

@@ -1,4 +1,5 @@
 import {
+    Bank,
     Mail,
     Network,
     Quest as HackHubQuest,
@@ -20,27 +21,20 @@ import {
     Q01_REWARDS,
     Q01_TARGET_IP,
     Q01_THE_CONTRACT,
-    Q01_WEB_AUDIT_HOST,
-    Q01_WEB_HOST,
+    Q01_WEB_AUDIT_PATH,
     Q01_WEB_HOME_HOST,
     Q01_WEB_HOME_URL,
-    Q01_WEB_SUBDOMAINS,
 } from "../../content/index.js";
 
 import { asId } from "../../core/index.js";
-import {
-    normalizeReconTarget,
-} from "../../application/ops/recon-service.js";
-import { opsRuntime } from "../../application/ops-runtime.js";
 import { gameRuntime } from "./runtime.js";
 
 interface Q01QuestData {
     readonly targetIp: string;
     readonly auditScopeReviewed: boolean;
     readonly networkScanned: boolean;
-    readonly servicesIdentified: boolean;
     readonly lynxDiscovered: boolean;
-    readonly subdomainsEnumerated: boolean;
+    readonly pathsDiscovered: boolean;
     readonly basicVulnerabilityChecksCompleted: boolean;
     readonly reportSubmitted: boolean;
 }
@@ -56,6 +50,16 @@ interface BrowserMetaData {
     readonly pathname: string;
 }
 
+interface DirhunterData {
+    readonly host: string;
+    readonly results: string[];
+}
+
+interface MailReadData {
+    readonly from: string;
+    readonly subject: string;
+}
+
 interface Q01NmapPort {
     readonly port: number;
     readonly status: "OPEN" | "CLOSE";
@@ -65,6 +69,7 @@ interface Q01NmapPort {
 interface Q01LynxResult {
     readonly ips: string[];
     readonly address: string[];
+    readonly additional?: string[];
 }
 
 const Q01_NMAP_RESULT: Q01NmapPort[] = [
@@ -76,6 +81,11 @@ const Q01_NMAP_RESULT: Q01NmapPort[] = [
 const Q01_LYNX_RESULT: Q01LynxResult = {
     ips: [Q01_TARGET_IP],
     address: [Q01_WEB_HOME_URL],
+    additional: [
+        Q01_CLIENT_NAME,
+        "Jakarta Operations",
+        "Canonical public web host discovered from the target IP.",
+    ],
 };
 
 const resetQ01ShellFixtures = (): void => {
@@ -93,31 +103,26 @@ const registerQ01ShellFixtures = (): void => {
     Shell.addCommandData("lynx", Q01_LYNX_INPUT_URL, Q01_LYNX_RESULT);
 };
 
-const getReconTarget = (args: string[]): string | null => {
-    const domainFlagIndex = args.findIndex(
-        (arg) => arg === "-d" || arg === "--domain",
-    );
+const normalizeHost = (rawHost: string): string | null => {
+    const value = rawHost.trim().replace(/^['"]|['"]$/g, "");
 
-    return domainFlagIndex >= 0
-        ? args[domainFlagIndex + 1] ?? null
-        : args[0] ?? null;
-};
-
-const isExpectedReconTarget = (args: string[]): boolean => {
-    const rawTarget = getReconTarget(args);
-    const normalizedTarget = rawTarget
-        ? normalizeReconTarget(rawTarget)
-        : null;
-
-    if (
-        normalizedTarget !== Q01_WEB_HOST &&
-        normalizedTarget !== Q01_WEB_HOME_HOST
-    ) {
-        return false;
+    if (!value) {
+        return null;
     }
 
-    return opsRuntime.recon.resolveProfile(normalizedTarget)?.id === "q01";
+    try {
+        const url = value.includes("://")
+            ? new URL(value)
+            : new URL(`https://${value}`);
+
+        return url.hostname.toLowerCase().replace(/\.$/, "");
+    } catch {
+        return null;
+    }
 };
+
+const isExpectedDirhunterHost = (rawHost: string): boolean =>
+    normalizeHost(rawHost) === Q01_WEB_HOME_HOST;
 
 const Q01_INCOMING_MAIL_CONTENT = [
     "I have a client looking for a short security audit.",
@@ -211,19 +216,26 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         },
         {
             name: Q01_OBJECTIVE_IDS.identifyServices,
-            description: "Identify exposed services",
+            description: "Identify the exposed web presence",
+            terminalCommand: "lynx",
             unlocksAfter: [Q01_OBJECTIVE_IDS.scanNetwork],
+        },
+        {
+            name: Q01_OBJECTIVE_IDS.enumeratePaths,
+            description: "Enumerate hidden pages",
+            terminalCommand: "dirhunter",
+            unlocksAfter: [Q01_OBJECTIVE_IDS.identifyServices],
         },
         {
             name: Q01_OBJECTIVE_IDS.basicVulnerabilityChecks,
             description: "Perform basic vulnerability checks",
-            hint: "Discover the public web host with lynx, run the reconnaissance module, then inspect the authorized security surface.",
-            unlocksAfter: [Q01_OBJECTIVE_IDS.identifyServices],
+            hint: "Inspect the authorized security page you discovered.",
+            unlocksAfter: [Q01_OBJECTIVE_IDS.enumeratePaths],
         },
         {
             name: Q01_OBJECTIVE_IDS.submitAudit,
             description: "Submit audit report",
-            hint: `Reply to ${Q01_REPORT_RECIPIENT} with subject \"${Q01_REPORT_SUBJECT}\". Fill in the company and open-port values you discovered during the audit.`,
+            hint: `Reply to ${Q01_REPORT_RECIPIENT} with subject \"${Q01_REPORT_SUBJECT}\". Fill in the company, open-port, and url values you discovered.`,
             unlocksAfter: [Q01_OBJECTIVE_IDS.basicVulnerabilityChecks],
         },
     ];
@@ -233,9 +245,8 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             targetIp: Q01_TARGET_IP,
             auditScopeReviewed: false,
             networkScanned: false,
-            servicesIdentified: false,
             lynxDiscovered: false,
-            subdomainsEnumerated: false,
+            pathsDiscovered: false,
             basicVulnerabilityChecksCompleted: false,
             reportSubmitted: false,
         };
@@ -271,18 +282,17 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             children: [],
         });
 
-        Network.registerDomain(Q01_WEB_HOST, this.Data.targetIp);
-        Q01_WEB_SUBDOMAINS.forEach((hostname) => {
-            Network.registerDomain(hostname, this.Data.targetIp);
-        });
+        Network.registerDomain(Q01_WEB_HOME_HOST, this.Data.targetIp);
 
         sendAdrianMail(Q01_REPORT_SUBJECT, Q01_INCOMING_MAIL_CONTENT);
-        this.SetData("auditScopeReviewed", true);
-        this.completeObjective(Q01_OBJECTIVE_IDS.reviewScope);
     }
 
     override OnObjectivesStart() {
         registerQ01ShellFixtures();
+
+        this.Events.on("Mail.Read", (data) => {
+            this.handleMailRead(data);
+        });
 
         this.Events.on("Terminal.Command", (data) => {
             this.handleTerminalCommand(data);
@@ -290,6 +300,10 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
 
         this.Events.on("Browser.Meta", (data) => {
             this.handleBrowserMeta(data);
+        });
+
+        this.Events.on("Terminal.Dirhunter", (data) => {
+            this.handleDirhunter(data);
         });
 
         this.Events.on("Mail.Sent", (data) => {
@@ -339,7 +353,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             amount: Q01_REWARDS.submitCorrectReport,
         });
 
-        gameRuntime.economy.applyMissionReward(
+        const moneyGranted = gameRuntime.economy.applyMissionReward(
             {
                 id: asId<"MissionReward">("entity_resolution.q01.money"),
                 questId: "entity_resolution.q01",
@@ -349,22 +363,27 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             Q01_FINAL_STATE_FLAG,
         );
 
+        if (moneyGranted) {
+            Bank.transaction({
+                amount: Q01_REWARDS.money,
+                description: "Security Audit — Jakarta",
+                from: {
+                    IBAN: "ID00SKYNETLOGISTICS",
+                    name: Q01_CLIENT_NAME,
+                },
+            });
+        }
+
         sendAdrianMail("Re: Security Audit — Jakarta", Q01_COMPLETION_MAIL_CONTENT);
         resetQ01ShellFixtures();
-        Network.removeDomain(Q01_WEB_HOST);
-        Q01_WEB_SUBDOMAINS.forEach((hostname) => {
-            Network.removeDomain(hostname);
-        });
+        Network.removeDomain(Q01_WEB_HOME_HOST);
         Network.destroyNetwork(this.Data.targetIp);
         gameRuntime.persistence.save();
     }
 
     override OnAbandon() {
         resetQ01ShellFixtures();
-        Network.removeDomain(Q01_WEB_HOST);
-        Q01_WEB_SUBDOMAINS.forEach((hostname) => {
-            Network.removeDomain(hostname);
-        });
+        Network.removeDomain(Q01_WEB_HOME_HOST);
         Network.destroyNetwork(this.Data.targetIp);
     }
 
@@ -393,11 +412,6 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
                 this.completeObjective(Q01_OBJECTIVE_IDS.scanNetwork);
             }
 
-            if (!this.Data.servicesIdentified) {
-                this.SetData("servicesIdentified", true);
-                this.completeObjective(Q01_OBJECTIVE_IDS.identifyServices);
-            }
-
             return;
         }
 
@@ -412,33 +426,55 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
                 return;
             }
 
-            this.SetData("lynxDiscovered", true);
+            if (!this.Data.lynxDiscovered) {
+                this.SetData("lynxDiscovered", true);
+                this.completeObjective(Q01_OBJECTIVE_IDS.identifyServices);
+            }
+
             return;
         }
 
-        if (data.command === "recon") {
-            if (!isExpectedReconTarget(data.args)) {
-                return;
-            }
+    }
 
-            this.SetData("subdomainsEnumerated", true);
+    private handleMailRead(data: MailReadData): void {
+        if (this.Data.auditScopeReviewed) {
+            return;
         }
+
+        if (data.from !== Q01_ADRIAN_EMAIL || data.subject !== Q01_REPORT_SUBJECT) {
+            return;
+        }
+
+        this.SetData("auditScopeReviewed", true);
+        this.completeObjective(Q01_OBJECTIVE_IDS.reviewScope);
+    }
+
+    private handleDirhunter(data: DirhunterData): void {
+        if (this.Data.pathsDiscovered) {
+            return;
+        }
+
+        if (!isExpectedDirhunterHost(data.host)) {
+            return;
+        }
+
+        this.SetData("pathsDiscovered", true);
+        this.completeObjective(Q01_OBJECTIVE_IDS.enumeratePaths);
     }
 
     private handleBrowserMeta(data: BrowserMetaData): void {
         if (
             this.Data.basicVulnerabilityChecksCompleted ||
-            !this.Data.servicesIdentified ||
             !this.Data.lynxDiscovered ||
-            !this.Data.subdomainsEnumerated
+            !this.Data.pathsDiscovered
         ) {
             return;
         }
 
         if (
             data.protocol !== "https:" ||
-            data.hostname !== Q01_WEB_AUDIT_HOST ||
-            data.pathname !== "/"
+            data.hostname !== Q01_WEB_HOME_HOST ||
+            data.pathname !== Q01_WEB_AUDIT_PATH
         ) {
             return;
         }

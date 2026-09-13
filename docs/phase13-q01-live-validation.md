@@ -1,6 +1,6 @@
 # ENTITY RESOLUTION — Q01 Live Validation
 
-Status: **REVISED — READY FOR LIVE VALIDATION**
+Status: **PASSED — 2026-09-13** (see `docs/phase13-q01-final-lock.md` for the locked contract this validates)
 
 ## Preconditions
 
@@ -24,18 +24,20 @@ Use a fresh replay build after each code change. Each replay build receives a ne
 adrian.cole@entityresolution.lock
 ```
 
-4. Confirm the five locked objective names are presented in this order:
+4. Confirm the six locked objective names are presented in this order, with `nmap`/`lynx`/`dirhunter` icons on Objectives 02–04:
 
 ```text
 Review audit scope
-Scan the ip target
-Identify exposed services
+Scan the ip target                    (nmap icon)
+Identify the exposed web presence     (lynx icon)
+Enumerate hidden pages                (dirhunter icon)
 Perform basic vulnerability checks
 Submit audit report
 ```
 
-5. Confirm the audit mail provides target `203.0.113.42` but does **not** provide the public web URL, company answer, or open-port answer in the report template.
-6. Open Terminal and run the scan command from Objective 02:
+5. Confirm Objective 01 does **not** auto-complete on accept. Open the mail from Adrian; only then does Objective 01 complete and Objective 02 unlock.
+6. Confirm the audit mail provides target `203.0.113.42` but does **not** provide the public web URL, company answer, open-port answer, or security-page URL in the report template.
+7. Open Terminal and run the scan command from Objective 02:
 
 ```bash
 nmap
@@ -43,7 +45,7 @@ nmap
 
 The implementation also accepts `nmap 203.0.113.42` for compatibility with the terminal runtime.
 
-7. Confirm the result contains:
+8. Confirm the result contains:
 
 ```text
 22/tcp  CLOSE  ssh
@@ -51,8 +53,7 @@ The implementation also accepts `nmap 203.0.113.42` for compatibility with the t
 443/tcp OPEN   https
 ```
 
-8. Confirm Objectives 02 and 03 are satisfied.
-9. Run the Nmap command again. **Objective 04 must remain incomplete.**
+9. Confirm Objective 02 is satisfied (Objective 03 does not complete from nmap alone).
 10. Discover the canonical public web host from the target IP:
 
 ```bash
@@ -68,43 +69,42 @@ lynx https://203.0.113.42/
 11. Confirm the Lynx response exposes:
 
 ```text
-https://www.skynet-logistics.idx/
+Address: https://www.skynet-logistics.idx/
+Additional: Skynet Logistics / Jakarta Operations / Canonical public web host discovered from the target IP.
 ```
 
-12. Enumerate the domain discovered from Lynx:
+12. Confirm Objective 03 completes from this Lynx result.
+13. Install and run the **native** `dirhunter` command against the discovered host:
 
 ```bash
-subfinder -d skynet-logistics.idx
+apt-get install dirhunter
+dirhunter https://www.skynet-logistics.idx/
 ```
 
-13. Confirm exactly four subdomains are returned:
+14. Confirm dirhunter returns exactly:
 
 ```text
-portal.skynet-logistics.idx
-security.skynet-logistics.idx
-status.skynet-logistics.idx
-www.skynet-logistics.idx
+/
+/portal
+/status
+/security
 ```
 
-14. Open the discovered hosts in the FirebearBrowser:
+15. Confirm Objective 04 completes from this real native `Terminal.Dirhunter` event (no fixture/custom command involved).
+16. Open the discovered paths in the FirebearBrowser:
 
 ```text
 https://www.skynet-logistics.idx/
-https://portal.skynet-logistics.idx/
-https://status.skynet-logistics.idx/
-https://security.skynet-logistics.idx/
+https://www.skynet-logistics.idx/portal
+https://www.skynet-logistics.idx/status
+https://www.skynet-logistics.idx/security
 ```
 
-15. Confirm `www` is the public homepage, `portal` and `status` return `403 FORBIDDEN`, and `security` is the only real audit surface.
-16. Confirm the `security` page uses the black/green terminal-style presentation and shows the audit findings, including 443/tcp as OPEN and the basic assessment conclusion.
-17. Confirm Objective 04 completes only from the HTTPS `Browser.Meta` interaction against:
-
-```text
-https://security.skynet-logistics.idx/
-```
-
-18. Verify that HTTP does not provide a Q01 audit path because port 80 is closed.
-19. Submit the audit report using Adrian's supplied format:
+17. Confirm `/` is the public homepage, `/portal` and `/status` return `403 FORBIDDEN`, and `/security` is the only real audit surface.
+18. Confirm the `/security` page uses the black/green terminal-style presentation and shows the audit findings, including 443/tcp as OPEN and the basic assessment conclusion.
+19. Confirm Objective 05 completes only from the HTTPS `Browser.Meta` interaction against `https://www.skynet-logistics.idx/security` (requires Objectives 03 and 04 already complete).
+20. Verify that HTTP does not provide a Q01 audit path because port 80 is closed.
+21. Submit the audit report using Adrian's supplied format:
 
 ```text
 Format report audit:
@@ -112,36 +112,35 @@ Subject: Security Audit — Jakarta
 
 Target: <COMPANY>
 Open Ports: <PORTS>
+Url: <URL>
 
 No critical vulnerabilities identified.
 Further internal assessment is recommended.
 ```
 
-20. Replace `<COMPANY>` and `<PORTS>` with the discovered values and send the normal in-game mail/reply.
-21. Confirm Objective 05 completes only for the resolved canonical values, while literal placeholders do not complete the objective.
-22. Confirm the development quest finishes and Adrian replies.
-23. Confirm the replay build does not grant production XP/money and does not set:
+22. Replace `<COMPANY>`, `<PORTS>`, and `<URL>` with the discovered values and send the normal in-game mail/reply.
+23. Confirm Objective 06 completes only for the resolved canonical values (including the new `Url:` line), while literal placeholders do not complete the objective.
+24. Confirm the development quest finishes, Adrian replies, and MISSION COMPLETE is shown.
+25. Confirm the replay build does not grant production XP/money and does not set:
 
 ```text
 entity_resolution.q01.completed
 ```
 
-24. Confirm no Q14 or Phase 12 diagnostic content is exposed by the replay package.
+26. Confirm no Q14 or Phase 12 diagnostic content is exposed by the replay package.
 
-## Objective 04 Boundary
+## Objective 05 Boundary
 
-Objective 04 requires the following completed discovery chain before the final browser interaction:
+Objective 05 (`basicVulnerabilityChecks`) requires the following completed discovery chain before the final browser interaction:
 
 ```text
-nmap
-  ↓
 lynx 203.0.113.42
   ↓
 https://www.skynet-logistics.idx/
   ↓
-subfinder -d skynet-logistics.idx
+dirhunter https://www.skynet-logistics.idx/
   ↓
-security.skynet-logistics.idx
+/, /portal, /status, /security
   ↓
 Browser.Meta
 ```
@@ -150,34 +149,25 @@ The final browser interaction must use:
 
 ```text
 protocol: https:
-hostname: security.skynet-logistics.idx
-pathname: /
-port: 443 when supplied by the runtime
+hostname: www.skynet-logistics.idx
+pathname: /security
 ```
 
 Native SSH is not part of the Q01 acceptance path.
 
 ## Web Boundary
 
-Exactly four Q01 subdomains are modeled:
+One host, four paths:
 
 ```text
 www.skynet-logistics.idx
-portal.skynet-logistics.idx
-status.skynet-logistics.idx
-security.skynet-logistics.idx
+  /          → public homepage
+  /portal    → 403 FORBIDDEN
+  /status    → 403 FORBIDDEN
+  /security  → audit target
 ```
 
-Behavior:
-
-```text
-www      → public homepage
-portal   → 403 FORBIDDEN
-status   → 403 FORBIDDEN
-security → audit target
-```
-
-The apex domain is the enumeration root and is not registered as a Website. The canonical public host is discovered through Lynx.
+The apex domain (`skynet-logistics.idx`) is not registered as a Website or a live domain. The canonical public host is discovered through Lynx; the four paths are discovered through native `dirhunter`.
 
 ## Open-Port Boundary
 
@@ -205,9 +195,9 @@ Submission values are discovered rather than supplied directly:
 ```text
 recipient = adrian.cole@entityresolution.lock
 subject   = Security Audit — Jakarta
-body      = resolved report using the supplied template
+body      = resolved report using the supplied template (Target/Open Ports/Url)
 ```
 
 ## Production Gate
 
-Q01 is not considered production-PASS until the full scenario succeeds in the real HackHub runtime and the observed result is recorded in the Q01 final-lock documentation.
+**PASSED.** The full scenario above succeeded in the real HackHub runtime on 2026-09-13; the observed result is recorded in `docs/phase13-q01-final-lock.md`.

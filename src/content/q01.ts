@@ -8,23 +8,22 @@ export const Q01_CLIENT_NAME = "Skynet Logistics";
 export const Q01_TARGET_IP = "203.0.113.42";
 export const Q01_WEB_HOST = "skynet-logistics.idx";
 export const Q01_WEB_HOME_HOST = `www.${Q01_WEB_HOST}`;
-export const Q01_WEB_AUDIT_HOST = `security.${Q01_WEB_HOST}`;
-export const Q01_WEB_FORBIDDEN_HOSTS = [
-    `portal.${Q01_WEB_HOST}`,
-    `status.${Q01_WEB_HOST}`,
-] as const;
-
-export const Q01_WEB_SUBDOMAINS = [
-    Q01_WEB_HOME_HOST,
-    ...Q01_WEB_FORBIDDEN_HOSTS,
-    Q01_WEB_AUDIT_HOST,
-] as const;
-
 export const Q01_WEB_HOME_URL = `https://${Q01_WEB_HOME_HOST}/`;
-export const Q01_WEB_AUDIT_URL = `https://${Q01_WEB_AUDIT_HOST}/`;
 
 // Backwards-compatible alias for callers that treat the public HTTPS surface as the home URL.
 export const Q01_WEB_HTTPS_URL = Q01_WEB_HOME_URL;
+
+// Experimental path-based redesign: the audited surface is exactly one public
+// host with several pages, discovered by path (dirhunter-style) instead of
+// separate subdomains. Not yet locked — see docs/phase13-q01-final-lock.md.
+export const Q01_WEB_AUDIT_PATH = "/security";
+export const Q01_WEB_FORBIDDEN_PATHS = ["/portal", "/status"] as const;
+export const Q01_WEB_PATHS = [
+    "/",
+    ...Q01_WEB_FORBIDDEN_PATHS,
+    Q01_WEB_AUDIT_PATH,
+] as const;
+export const Q01_WEB_AUDIT_URL = `https://${Q01_WEB_HOME_HOST}${Q01_WEB_AUDIT_PATH}`;
 
 export const Q01_LYNX_INPUT_IP = Q01_TARGET_IP;
 export const Q01_LYNX_INPUT_URL = `https://${Q01_TARGET_IP}/`;
@@ -54,6 +53,10 @@ export const Q01_RECON_RESULT = [
     "www.skynet-logistics.idx",
 ].join("\n");
 
+// Q01's dedicated `subfinders` terminal command renders the same deterministic
+// subdomain list as the shared DSS recon profile above.
+export const Q01_SUBFINDER_RESULT = Q01_RECON_RESULT;
+
 export const Q01_RECON_PROFILE: ReconProfile = {
     id: "q01",
     targets: [Q01_WEB_HOST, Q01_WEB_HOME_HOST],
@@ -64,7 +67,7 @@ export const Q01_RECON_PROFILE: ReconProfile = {
             description: "certificate index",
             candidates: [
                 Q01_WEB_HOME_HOST,
-                Q01_WEB_AUDIT_HOST,
+                `security.${Q01_WEB_HOST}`,
             ],
         },
         {
@@ -72,7 +75,7 @@ export const Q01_RECON_PROFILE: ReconProfile = {
             name: "passive-dns",
             description: "passive DNS",
             candidates: [
-                Q01_WEB_AUDIT_HOST,
+                `security.${Q01_WEB_HOST}`,
                 `portal.${Q01_WEB_HOST}`,
             ],
         },
@@ -100,7 +103,7 @@ export const Q01_RECON_PROFILE: ReconProfile = {
     ],
     resultHosts: [
         `portal.${Q01_WEB_HOST}`,
-        Q01_WEB_AUDIT_HOST,
+        `security.${Q01_WEB_HOST}`,
         `status.${Q01_WEB_HOST}`,
         Q01_WEB_HOME_HOST,
     ],
@@ -113,6 +116,7 @@ export const Q01_REPORT_SUBJECT = "Security Audit — Jakarta";
 export const Q01_REPORT_BODY_TEMPLATE = [
     "Target: <COMPANY>",
     "Open Ports: <PORTS>",
+    "Url: <URL>",
     "",
     "No critical vulnerabilities identified.",
     "Further internal assessment is recommended.",
@@ -121,6 +125,7 @@ export const Q01_REPORT_BODY_TEMPLATE = [
 export const Q01_REPORT_BODY = [
     `Target: ${Q01_CLIENT_NAME}`,
     "Open Ports: 443",
+    `Url: ${Q01_WEB_AUDIT_URL}`,
     "",
     "No critical vulnerabilities identified.",
     "Further internal assessment is recommended.",
@@ -132,8 +137,9 @@ export const Q01_OBJECTIVE_IDS = {
     reviewScope: "q01.objective.01",
     scanNetwork: "q01.objective.02",
     identifyServices: "q01.objective.03",
-    basicVulnerabilityChecks: "q01.objective.04",
-    submitAudit: "q01.objective.05",
+    enumeratePaths: "q01.objective.04",
+    basicVulnerabilityChecks: "q01.objective.05",
+    submitAudit: "q01.objective.06",
 } as const;
 
 export const Q01_REWARDS = {

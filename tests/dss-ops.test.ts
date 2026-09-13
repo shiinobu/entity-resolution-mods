@@ -161,16 +161,21 @@ describe("DSS operations application foundation", () => {
         assert.match(appSource, /AppName\s*=\s*"dss"/);
         assert.match(appSource, /Title\s*=\s*"DSS"/);
         assert.doesNotMatch(appSource, /DEV_Q01_REPLAY_ID/);
-        assert.match(replayQuestSource, /override Name = `entity_resolution\.dev\.q01\.\$\{DEV_Q01_REPLAY_ID\}`;/);
+        assert.match(
+            replayQuestSource,
+            /export const Q01_REPLAY_QUEST_NAME = `entity_resolution\.dev\.q01\.\$\{DEV_Q01_REPLAY_ID\}`;/,
+        );
+        assert.match(replayQuestSource, /override Name = Q01_REPLAY_QUEST_NAME;/);
         assert.match(replayQuestSource, /override Title = "THE CONTRACT — DEV REPLAY";/);
         assert.match(replayEntrySource, /opsRuntime\.recon\.registerProfile\(Q01_RECON_PROFILE\)/);
     });
 
-    it("keeps the Q01 replay wired to the shared recon command", () => {
-        assert.match(replayQuestSource, /data\.command === "recon"/);
+    it("wires the Q01 replay to the native Terminal.Dirhunter event (experimental path-based redesign, not the shared recon command)", () => {
+        assert.match(replayQuestSource, /"Terminal\.Dirhunter"/);
+        assert.match(replayQuestSource, /handleDirhunter/);
+        assert.match(replayQuestSource, /normalizeHost/);
+        assert.doesNotMatch(replayQuestSource, /data\.command === "recon"/);
         assert.doesNotMatch(replayQuestSource, /data\.command === "subfinder"/);
-        assert.match(replayQuestSource, /normalizeReconTarget/);
-        assert.match(replayQuestSource, /getReconTarget/);
     });
 
     it("defines stable DSS recon event names", () => {

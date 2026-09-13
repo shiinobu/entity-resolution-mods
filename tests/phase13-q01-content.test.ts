@@ -15,6 +15,7 @@ import {
     Q01_RECON_INPUT_VARIANTS,
     Q01_RECON_PROFILE,
     Q01_RECON_RESULT,
+    Q01_SUBFINDER_RESULT,
     Q01_REPORT_BODY,
     Q01_REPORT_BODY_TEMPLATE,
     Q01_REPORT_RECIPIENT,
@@ -22,14 +23,14 @@ import {
     Q01_REWARDS,
     Q01_TARGET_IP,
     Q01_THE_CONTRACT,
-    Q01_WEB_AUDIT_HOST,
+    Q01_WEB_AUDIT_PATH,
     Q01_WEB_AUDIT_URL,
-    Q01_WEB_FORBIDDEN_HOSTS,
+    Q01_WEB_FORBIDDEN_PATHS,
     Q01_WEB_HOST,
     Q01_WEB_HOME_HOST,
     Q01_WEB_HOME_URL,
     Q01_WEB_HTTPS_URL,
-    Q01_WEB_SUBDOMAINS,
+    Q01_WEB_PATHS,
 } from "../src/content/index.js";
 
 import { ConditionEvaluator } from "../src/domain/shared/index.js";
@@ -61,6 +62,18 @@ const reconCommandSource = readFileSync(
     "utf8",
 );
 
+const subfinderCommandSource = readFileSync(
+    resolve(
+        fileURLToPath(
+            new URL(
+                "../src/infrastructure/hackhub/commands/q01-subfinder.ts",
+                import.meta.url,
+            ),
+        ),
+    ),
+    "utf8",
+);
+
 const productionEntrySource = readFileSync(
     resolve(fileURLToPath(new URL("../src/index.ts", import.meta.url))),
     "utf8",
@@ -80,23 +93,18 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         assert.equal(Q01_WEB_HOST, "skynet-logistics.idx");
     });
 
-    it("defines the canonical public and audit subdomains", () => {
+    it("defines the canonical public host and audit/forbidden paths (path-based redesign, not yet locked)", () => {
         assert.equal(Q01_WEB_HOME_HOST, "www.skynet-logistics.idx");
-        assert.equal(Q01_WEB_AUDIT_HOST, "security.skynet-logistics.idx");
-        assert.deepEqual(Q01_WEB_FORBIDDEN_HOSTS, [
-            "portal.skynet-logistics.idx",
-            "status.skynet-logistics.idx",
-        ]);
-        assert.deepEqual(Q01_WEB_SUBDOMAINS, [
-            "www.skynet-logistics.idx",
-            "portal.skynet-logistics.idx",
-            "status.skynet-logistics.idx",
-            "security.skynet-logistics.idx",
-        ]);
-        assert.equal(Q01_WEB_SUBDOMAINS.length, 4);
+        assert.equal(Q01_WEB_AUDIT_PATH, "/security");
+        assert.deepEqual(Q01_WEB_FORBIDDEN_PATHS, ["/portal", "/status"]);
+        assert.deepEqual(Q01_WEB_PATHS, ["/", "/portal", "/status", "/security"]);
+        assert.equal(Q01_WEB_PATHS.length, 4);
         assert.equal(Q01_WEB_HOME_URL, "https://www.skynet-logistics.idx/");
         assert.equal(Q01_WEB_HTTPS_URL, Q01_WEB_HOME_URL);
-        assert.equal(Q01_WEB_AUDIT_URL, "https://security.skynet-logistics.idx/");
+        assert.equal(
+            Q01_WEB_AUDIT_URL,
+            "https://www.skynet-logistics.idx/security",
+        );
     });
 
     it("defines the reusable recon input variants and deterministic Q01 profile", () => {
@@ -171,27 +179,100 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         );
     });
 
+    it("populates the Lynx 'additional' OSINT section instead of leaving it empty", () => {
+        assert.match(
+            questSource,
+            /additional:\s*\[\s*Q01_CLIENT_NAME,/,
+        );
+    });
+
+    it("keeps the Q01 subfinders command registered as a standalone tool (no longer gates Q01 progression)", () => {
+        assert.match(
+            subfinderCommandSource,
+            /@RegisterCommand\(\{\s*default:\s*true\s*\}\)/,
+        );
+        assert.match(subfinderCommandSource, /CommandName\s*=\s*"subfinders"/);
+        assert.match(
+            subfinderCommandSource,
+            /Q01_SUBFINDER_RESULT\.split\("\\n"\)/,
+        );
+        assert.equal(
+            Q01_SUBFINDER_RESULT,
+            "portal.skynet-logistics.idx\nsecurity.skynet-logistics.idx\nstatus.skynet-logistics.idx\nwww.skynet-logistics.idx",
+        );
+        assert.match(
+            productionEntrySource,
+            /import "\.\/infrastructure\/hackhub\/commands\/q01-subfinder\.js";/,
+        );
+        assert.match(
+            replayEntrySource,
+            /import "\.\.\/src\/infrastructure\/hackhub\/commands\/q01-subfinder\.js";/,
+        );
+    });
+
+    it("gates Objective 04 progress on the native Terminal.Dirhunter event (experimental path-based redesign)", () => {
+        assert.match(questSource, /"Terminal\.Dirhunter"/);
+        assert.match(questSource, /handleDirhunter/);
+        assert.match(
+            questSource,
+            /normalizeHost\(rawHost\)\s*===\s*Q01_WEB_HOME_HOST/,
+        );
+        assert.match(questSource, /data\.hostname !== Q01_WEB_HOME_HOST/);
+        assert.match(questSource, /data\.pathname !== Q01_WEB_AUDIT_PATH/);
+    });
+
+    it("does not auto-complete Objective 01 in OnStart; it only completes once the player reads Adrian's mail", () => {
+        assert.match(questSource, /"Mail\.Read"/);
+        assert.match(questSource, /handleMailRead/);
+        assert.match(
+            questSource,
+            /data\.from !== Q01_ADRIAN_EMAIL \|\| data\.subject !== Q01_REPORT_SUBJECT/,
+        );
+
+        const onStartMatch = questSource.match(
+            /override OnStart\(\) \{[\s\S]*?\n {4}\}/,
+        );
+        assert.ok(onStartMatch, "expected to find OnStart() body");
+        assert.doesNotMatch(
+            onStartMatch![0],
+            /completeObjective\(Q01_OBJECTIVE_IDS\.reviewScope\)/,
+        );
+    });
+
+    it("deposits the money reward into the player's real bank account via the native Bank API", () => {
+        assert.match(questSource, /import \{[\s\S]*?\bBank\b[\s\S]*?\} from "@hotbunny\/hackhub-content-sdk";/);
+        assert.match(
+            questSource,
+            /const moneyGranted = gameRuntime\.economy\.applyMissionReward\(/,
+        );
+        assert.match(
+            questSource,
+            /if \(moneyGranted\) \{\s*Bank\.transaction\(\{/,
+        );
+    });
+
     it("defines the canonical email identity and player-facing report template", () => {
         assert.equal(Q01_ADRIAN_EMAIL, "adrian.cole@entityresolution.lock");
         assert.equal(Q01_REPORT_RECIPIENT, Q01_ADRIAN_EMAIL);
         assert.equal(Q01_REPORT_SUBJECT, "Security Audit — Jakarta");
         assert.equal(
             Q01_REPORT_BODY_TEMPLATE,
-            "Target: <COMPANY>\nOpen Ports: <PORTS>\n\nNo critical vulnerabilities identified.\nFurther internal assessment is recommended.",
+            "Target: <COMPANY>\nOpen Ports: <PORTS>\nUrl: <URL>\n\nNo critical vulnerabilities identified.\nFurther internal assessment is recommended.",
         );
         assert.equal(
             Q01_REPORT_BODY,
-            "Target: Skynet Logistics\nOpen Ports: 443\n\nNo critical vulnerabilities identified.\nFurther internal assessment is recommended.",
+            `Target: Skynet Logistics\nOpen Ports: 443\nUrl: ${Q01_WEB_AUDIT_URL}\n\nNo critical vulnerabilities identified.\nFurther internal assessment is recommended.`,
         );
     });
 
-    it("preserves the five locked player objective ids", () => {
+    it("defines six player objective ids (experimental path-based redesign added Enumerate hidden pages, not yet locked)", () => {
         assert.deepEqual(Q01_OBJECTIVE_IDS, {
             reviewScope: "q01.objective.01",
             scanNetwork: "q01.objective.02",
             identifyServices: "q01.objective.03",
-            basicVulnerabilityChecks: "q01.objective.04",
-            submitAudit: "q01.objective.05",
+            enumeratePaths: "q01.objective.04",
+            basicVulnerabilityChecks: "q01.objective.05",
+            submitAudit: "q01.objective.06",
         });
     });
 

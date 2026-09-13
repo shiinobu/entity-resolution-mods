@@ -1,7 +1,9 @@
 # ENTITY RESOLUTION — Q01 Source Gate
 
 Date: 2026-09-12
-Status: **REVISED IMPLEMENTATION LOCK — LIVE VALIDATION PENDING**
+Status: **SUPERSEDED**
+
+This historical document described the four-subdomain/subfinder web model. See `docs/phase13-q01-final-lock.md` for the active, live-validated (2026-09-13) path-based/dirhunter contract.
 
 ## Source Authority
 

@@ -7,8 +7,8 @@ import {
 import {
     Q01_CLIENT_NAME,
     Q01_TARGET_IP,
-    Q01_WEB_AUDIT_HOST,
-    Q01_WEB_FORBIDDEN_HOSTS,
+    Q01_WEB_AUDIT_PATH,
+    Q01_WEB_FORBIDDEN_PATHS,
     Q01_WEB_HOME_HOST,
 } from "../../../content/index.js";
 
@@ -16,17 +16,21 @@ import forbiddenPage from "./q01-forbidden.html";
 import homePage from "./q01-home.html";
 import securityPage from "./q01-security.html";
 
-const rootPage = (
+const page = (
+    path: string,
     html: string,
     title: string,
     description: string,
 ): WebsitePageDefinition => ({
-    path: "/",
+    path,
     title,
     description,
     html,
 });
 
+// Experimental path-based redesign: one public host, several pages
+// discovered by path (dirhunter-style) instead of separate subdomains.
+// Not yet locked — see docs/phase13-q01-final-lock.md.
 @RegisterWebsite
 export class Q01SkynetLogisticsWebsite extends Website {
     SiteName = Q01_CLIENT_NAME;
@@ -34,10 +38,29 @@ export class Q01SkynetLogisticsWebsite extends Website {
     Icon = "";
 
     Pages: WebsitePageDefinition[] = [
-        rootPage(
+        page(
+            "/",
             homePage,
             `${Q01_CLIENT_NAME} — Operations Portal`,
             `${Q01_CLIENT_NAME} public operations portal.`,
+        ),
+        page(
+            Q01_WEB_FORBIDDEN_PATHS[0],
+            forbiddenPage,
+            `${Q01_CLIENT_NAME} — Forbidden`,
+            "Restricted public web surface.",
+        ),
+        page(
+            Q01_WEB_FORBIDDEN_PATHS[1],
+            forbiddenPage,
+            `${Q01_CLIENT_NAME} — Forbidden`,
+            "Restricted public web surface.",
+        ),
+        page(
+            Q01_WEB_AUDIT_PATH,
+            securityPage,
+            `${Q01_CLIENT_NAME} — Security Review`,
+            "External security review surface for authorized auditors.",
         ),
     ];
 
@@ -45,49 +68,4 @@ export class Q01SkynetLogisticsWebsite extends Website {
         clientName: Q01_CLIENT_NAME,
         targetIp: Q01_TARGET_IP,
     };
-}
-
-@RegisterWebsite
-export class Q01SkynetLogisticsPortalWebsite extends Website {
-    SiteName = Q01_CLIENT_NAME;
-    Host = Q01_WEB_FORBIDDEN_HOSTS[0];
-    Icon = "";
-
-    Pages: WebsitePageDefinition[] = [
-        rootPage(
-            forbiddenPage,
-            `${Q01_CLIENT_NAME} — Forbidden`,
-            "Restricted public web surface.",
-        ),
-    ];
-}
-
-@RegisterWebsite
-export class Q01SkynetLogisticsStatusWebsite extends Website {
-    SiteName = Q01_CLIENT_NAME;
-    Host = Q01_WEB_FORBIDDEN_HOSTS[1];
-    Icon = "";
-
-    Pages: WebsitePageDefinition[] = [
-        rootPage(
-            forbiddenPage,
-            `${Q01_CLIENT_NAME} — Forbidden`,
-            "Restricted public web surface.",
-        ),
-    ];
-}
-
-@RegisterWebsite
-export class Q01SkynetLogisticsSecurityWebsite extends Website {
-    SiteName = Q01_CLIENT_NAME;
-    Host = Q01_WEB_AUDIT_HOST;
-    Icon = "";
-
-    Pages: WebsitePageDefinition[] = [
-        rootPage(
-            securityPage,
-            `${Q01_CLIENT_NAME} — Security Review`,
-            "External security review surface for authorized auditors.",
-        ),
-    ];
 }

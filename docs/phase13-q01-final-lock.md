@@ -1,20 +1,20 @@
 # ENTITY RESOLUTION — Q01 Final Lock
 
 Date: 2026-09-13
-Status: **FINAL LOCK — LYNX/DSS RECON; LIVE VALIDATION PENDING**
+Status: **FINAL LOCK — LIVE VALIDATION PASSED**
 
 ## Lock Scope
 
-This document is the current implementation lock for Q01 after the approved Lynx/subdomain reconnaissance amendment and subsequent promotion of reconnaissance into the shared Data Surveillance System (DSS) tool architecture.
+This document is the current implementation lock for Q01 after the path-based/dirhunter redesign superseded the earlier subdomain/DSS-recon and subfinders designs. The full live scenario — accept, nmap, lynx, dirhunter, browse the security page, submit the report, quest completion with rewards — has been run end-to-end in the real HackHub client and passed.
 
-The story intent, client, target, five objectives, canonical completion state, rewards, and non-exploitative assessment boundary remain unchanged. The web discovery model is now genuinely subdomain-based and is executed through the reusable DSS `ReconService`.
+The story intent, client, target, canonical completion state, rewards, and non-exploitative assessment boundary remain unchanged from Phase 8 canon. The web discovery model, objective breakdown, and terminal-tool bindings described here supersede every earlier Q01 lock document (`phase13-q01-recon-promotion.md`, `phase13-q01-subfinder-command-lock.md`, `phase13-q01-lynx-subdomain-amendment.md` — all historical/superseded).
 
 ## Canonical Identity
 
 ```text
 ID:            entity_resolution.q01
 Title:         THE CONTRACT
-Chapter:       01 — ENTITY RESOLUTION
+Chapter:       01 — GHOST SERVER
 Location:      Jakarta
 Primary:       Adrian Cole
 Prerequisite:  none
@@ -28,29 +28,35 @@ Maximum XP:    80
 
 ## Locked Objectives
 
-```text
-01 Review audit scope
-02 Scan the ip target
-03 Identify exposed services
-04 Perform basic vulnerability checks
-05 Submit audit report
-```
-
-Objective IDs remain:
+Q01 has **six** player-facing objectives, each bound to exactly one discovery action:
 
 ```text
-q01.objective.01
-q01.objective.02
-q01.objective.03
-q01.objective.04
-q01.objective.05
+01 Review audit scope                    (read Adrian's mail)
+02 Scan the ip target                    nmap
+03 Identify the exposed web presence     lynx
+04 Enumerate hidden pages                dirhunter
+05 Perform basic vulnerability checks    browse the discovered security page
+06 Submit audit report                   mail
 ```
 
-Objective 02 exposes only `nmap`; the target IP is supplied by Adrian's audit material.
+Objective IDs:
 
-Objective 03 has no hint.
+```text
+q01.objective.01  reviewScope
+q01.objective.02  scanNetwork
+q01.objective.03  identifyServices
+q01.objective.04  enumeratePaths
+q01.objective.05  basicVulnerabilityChecks
+q01.objective.06  submitAudit
+```
 
-Objective 04 directs the player toward discovery and inspection of the web security surface without directly naming the target host.
+Unlock chain: 01 → 02 → 03 → 04 → 05 → 06 (each objective's `unlocksAfter` is the previous one).
+
+Objectives 02, 03, and 04 each declare `terminalCommand` (`nmap`, `lynx`, `dirhunter` respectively) so the game renders that tool's icon on the objective automatically; none of the three carries a text hint, since the icon already tells the player what to run. Objectives 05 and 06 keep hints (05: "Inspect the authorized security page you discovered."; 06: "Fill in the company, open-port, and url values you discovered.").
+
+## Objective 01 — Mail-Gated (not auto-complete)
+
+Objective 01 does **not** complete automatically when the quest starts. `OnStart()` only sends Adrian's contract mail and sets up the network/domain; it does not call `completeObjective`. Completion requires the native `Mail.Read` event to fire for a message where `from === adrian.cole@entityresolution.lock` and `subject === "Security Audit — Jakarta"` — i.e. the player must actually open the mail. This gates Objective 02 (nmap) from unlocking until the player has read the brief.
 
 ## Locked Service Facts
 
@@ -62,33 +68,21 @@ Objective 04 directs the player toward discovery and inspection of the web secur
 
 Only HTTPS on port 443 is exposed for the Q01 web flow. Canonical HTTPS URLs omit the explicit `:443`.
 
-## Locked Web Discovery Contract
+## Locked Web Discovery Contract (path-based, single host)
 
-Apex domain:
-
-```text
-skynet-logistics.idx
-```
-
-Exactly four subdomains exist:
+The audited web surface is **one public host** with **four pages**, discovered by path instead of separate subdomains:
 
 ```text
-www.skynet-logistics.idx
-portal.skynet-logistics.idx
-status.skynet-logistics.idx
-security.skynet-logistics.idx
+Host: www.skynet-logistics.idx
+
+Paths:
+/          → public operations homepage
+/portal    → 403 FORBIDDEN
+/status    → 403 FORBIDDEN
+/security  → Q01 audit target
 ```
 
-Behavior:
-
-```text
-www      → public operations homepage
-portal   → 403 FORBIDDEN
-status   → 403 FORBIDDEN
-security → Q01 audit target
-```
-
-The apex hostname is the reconnaissance root and is not registered as a Website.
+All four pages are registered on a single `Website` (`Q01SkynetLogisticsWebsite`, `Host = www.skynet-logistics.idx`) via `Pages: WebsitePageDefinition[]`. The apex hostname (`skynet-logistics.idx`) is not registered as a Website or a live domain; only `www.skynet-logistics.idx` is registered via `Network.registerDomain`.
 
 ## Lynx Discovery Contract
 
@@ -110,72 +104,78 @@ Expected `lynx` address:
 https://www.skynet-logistics.idx/
 ```
 
-The implementation uses the HackHub SDK's typed `lynx` response shape and `address` field.
-
-## DSS Recon Contract
-
-The Q01 reconnaissance capability is no longer Q01-owned command code. It is the shared DSS `ReconService`, registered under the `OpsRuntime` boundary.
-
-Canonical player command:
+The implementation uses the HackHub SDK's typed `lynx` response shape and `address` field. The `additional` OSINT field (also part of the typed `lynx` response shape) is populated rather than left empty:
 
 ```text
-recon -d skynet-logistics.idx
+Skynet Logistics
+Jakarta Operations
+Canonical public web host discovered from the target IP.
 ```
 
-Equivalent target formatting remains accepted, including:
+This surfaces under the "Searching web for additional information" section of the native `lynx` renderer. Running `lynx` with the expected address completes Objective 03 (`identifyServices`).
+
+## Dirhunter Contract (native tool — no fixture needed)
+
+Objective 04 (`enumeratePaths`) is completed by the player running HackHub's **real native** `dirhunter` command against the discovered host:
 
 ```text
-recon -d www.skynet-logistics.idx
-recon -d https://skynet-logistics.idx/
-recon -d https://www.skynet-logistics.idx/
+dirhunter https://www.skynet-logistics.idx/
 ```
 
-Q01 registers profile `q01`, which returns exactly:
+Unlike `subfinder`, native `dirhunter` genuinely scans the host's **real registered Website pages** rather than an unrelated internal algorithm — live testing confirmed it returns exactly the four registered paths (`/`, `/portal`, `/status`, `/security`), with no fixture injection required. Q01 listens for the `Terminal.Dirhunter` event (`{ host, results }`) and completes the objective once `host` normalizes to `www.skynet-logistics.idx`; the exact contents of `results` are not validated, since the native tool's output is not under mod control (only that the player targeted the right host).
+
+This fully replaces the two earlier, rejected designs:
+
+- **DSS `ReconService`/`recon -d <domain>`** — required opening the separate Data Surveillance System app; abandoned because it added a whole shared-app dependency where a native command sufficed. The `recon` command and DSS app still exist and work generically, but Q01 no longer depends on them.
+- **Custom `subfinders` command** (self-rendered ProjectDiscovery-style banner) — built when native `subfinder` (singular) was confirmed live to return nothing for a fictional domain (`apt-get install subfinder` → `subfinder -d ...` → "No subdomains found"), because `subfinder` is event-driven (`Subfinder.Try`/`Subfinder.Results`, undocumented) rather than fixture-backed. `Q01SubfinderCommand` (registered as `subfinders`, plural, since production rejects a mod command shadowing a native name) is still registered and playable as a standalone tool, but no longer gates any Q01 objective.
+
+## Objective Flow
 
 ```text
-portal.skynet-logistics.idx
-security.skynet-logistics.idx
-status.skynet-logistics.idx
-www.skynet-logistics.idx
-```
-
-The shared service owns target normalization, source sequencing, progress calculations, candidate/unique counters, animation timing, spinner frames, and result streaming. The HackHub command is only an adapter that renders service events.
-
-The command uses original ENTITY RESOLUTION branding. ProjectDiscovery/Subfinder branding is not part of the player-facing Q01 command vocabulary.
-
-## Objective 04 Method
-
-The canonical method is:
-
-```text
-Identify exposed services
+Read Adrian's mail (Mail.Read)
+        ↓
+Objective 01 complete
+        ↓
+nmap 203.0.113.42
+        ↓
+443/tcp OPEN — https
+        ↓
+Objective 02 complete
         ↓
 lynx 203.0.113.42
         ↓
 https://www.skynet-logistics.idx/
         ↓
-recon -d skynet-logistics.idx
+Objective 03 complete
         ↓
-security.skynet-logistics.idx
+dirhunter https://www.skynet-logistics.idx/
         ↓
-HTTPS Browser inspection
+/, /portal, /status, /security
+        ↓
+Objective 04 complete
+        ↓
+open https://www.skynet-logistics.idx/security over HTTPS
+        ↓
+Objective 05 complete
+        ↓
+submit resolved Security Audit — Jakarta report
+        ↓
+Objective 06 complete → Q01 complete
 ```
 
-Objective 04 completes only after the discovery chain has completed and `Browser.Meta` reports:
+Objective 05 (`basicVulnerabilityChecks`) completes only after Objectives 03 and 04 have both completed and `Browser.Meta` reports:
 
 ```text
 protocol = https:
-hostname = security.skynet-logistics.idx
-pathname = /
+hostname = www.skynet-logistics.idx
+pathname = /security
 ```
 
 The actual network model exposes only 443/tcp for HTTPS, so HTTP/80 is outside the accepted audit transport.
 
 ## Security-Assessment Boundary
 
-The Q01 assessment remains non-exploitative.
-
-The quest does not require:
+The Q01 assessment remains non-exploitative. The quest does not require:
 
 ```text
 credential attacks
@@ -195,7 +195,7 @@ character.adrian.cole
 adrian.cole@entityresolution.lock
 ```
 
-The incoming email does not expose the web audit URL, company answer, or open-port answer.
+The incoming email does not expose the web audit URL, company answer, open-port answer, or security-page URL.
 
 ## Report Submission Contract
 
@@ -205,6 +205,7 @@ Subject: Security Audit — Jakarta
 
 Target: <COMPANY>
 Open Ports: <PORTS>
+Url: <URL>
 
 No critical vulnerabilities identified.
 Further internal assessment is recommended.
@@ -215,12 +216,13 @@ For the canonical Q01 world state, the resolved report is:
 ```text
 Target: Skynet Logistics
 Open Ports: 443
+Url: https://www.skynet-logistics.idx/security
 
 No critical vulnerabilities identified.
 Further internal assessment is recommended.
 ```
 
-Objective 05 accepts only the resolved canonical body, not the literal placeholders.
+Objective 06 accepts only the exact resolved canonical body, not the literal placeholders. The Objective 06 hint reads: "Fill in the company, open-port, and url values you discovered." — no "Reply to ... with subject ..." prefix, since the recipient/subject are established by Adrian's incoming mail itself.
 
 ## Rewards
 
@@ -234,6 +236,10 @@ Objective 05 accepts only the resolved canonical body, not the literal placehold
 
 $200
 ```
+
+Rewards are granted as a lump sum in `OnComplete()`, not per-objective, so splitting Objective 03/04 out of the old combined "identify/verify" step did not require any change to the four reward categories or the 80 XP / $200 total.
+
+**Bug fixed 2026-09-13 (post-lock):** `EconomyService.applyMissionReward()` only ever updated the mod's own internal `StateStore` ledger — it never called the native HackHub `Bank.transaction()` API, so the $200 reward never actually reached the player's real in-game bank account (in production, not just replay). `OnComplete()` now calls `Bank.transaction({ amount: 200, description: "Security Audit — Jakarta", from: {...} })` guarded by `applyMissionReward()`'s own idempotency return value, so the real bank deposit happens exactly once. XP has no equivalent native API in the SDK, so it remains tracked only in the mod's internal `RewardService`/`StateStore`, same as before. Replay's `OnComplete()` is deliberately untouched — it must not grant production money/XP by design (see `docs/phase13-q01-live-validation.md`).
 
 ## Runtime Ownership
 
@@ -250,8 +256,8 @@ RewardService         XP
 EconomyService        cash
 EndingService         endings
 HackHub adapters      SDK/game integration only
-OpsRuntime            DSS tool runtime boundary
-ReconService          shared reconnaissance behavior
+OpsRuntime            DSS tool runtime boundary (generic; Q01 no longer depends on it)
+ReconService          shared reconnaissance behavior (generic; Q01 no longer depends on it)
 ```
 
 ## Replay Tooling
@@ -262,54 +268,59 @@ The maintained Q01 replay tool remains:
 scripts/build-q01-replay.ts
 ```
 
-Replay remains isolated from production state and production rewards while using the same DSS reconnaissance profile.
+`dev/q01-replay-quest.ts` mirrors the production quest's objective structure, Mail.Read gating, dirhunter listener, and report format exactly, so live-testing in replay is representative of production. Replay remains isolated from production state and production rewards.
 
 ## Production Validation Status
 
-This remains a **final implementation lock**, not a false live-PASS declaration.
-
-The live production gate is:
+**LIVE-VALIDATED PASS.** The full gate below was observed in the real HackHub client on 2026-09-13:
 
 ```text
 build
  ↓
-install clean production package
+install production/replay package
  ↓
 accept Q01
  ↓
-complete objectives 01–03
+read Adrian's mail → Objective 01 complete
  ↓
-verify 22/ssh CLOSE, 80/http CLOSE, 443/https OPEN
+nmap 203.0.113.42 → verify 22/ssh CLOSE, 80/http CLOSE, 443/https OPEN
  ↓
-lynx 203.0.113.42
+Objective 02 complete
  ↓
-verify www.skynet-logistics.idx
+lynx 203.0.113.42 → verify www.skynet-logistics.idx and populated "additional" OSINT section
  ↓
-recon -d skynet-logistics.idx
+Objective 03 complete
  ↓
-verify exactly four subdomains
+dirhunter https://www.skynet-logistics.idx/ → verify exactly /, /portal, /status, /security
  ↓
-verify portal/status = 403
+Objective 04 complete
  ↓
-open security.skynet-logistics.idx over HTTPS
+open https://www.skynet-logistics.idx/security over HTTPS
  ↓
-complete Objective 04
+Objective 05 complete
  ↓
-discover COMPANY and PORTS
+discover COMPANY, PORTS, and URL; send resolved Security Audit — Jakarta report
  ↓
-send resolved Security Audit — Jakarta report
- ↓
-complete Objective 05
+Objective 06 complete
  ↓
 verify Q01 completion + $200 + 80 XP
  ↓
-record PASS
+PASS recorded
 ```
 
-Until that real-game gate is observed, Q02 must not be activated in production.
+### Live-test history (2026-09-13)
+
+1. **First pass** — nmap and Lynx `address` (public host discovery) both worked; native `subfinder` (singular) returned no data (real native tool, event-driven, no fixture support) and Lynx's `additional` OSINT section was empty (field never populated).
+2. **Fix** — reverted subdomain enumeration to a self-contained `subfinders` (plural) command; populated Lynx `additional`.
+3. **Second pass** — `subfinders` confirmed working; discussed whether the real native `dirhunter` tool could replace it for a path-based (not subdomain-based) redesign.
+4. **Redesign** — collapsed the four subdomains into one host with four paths; wired Objective 04 to the real native `Terminal.Dirhunter` event instead of any custom command. Live test: `dirhunter https://www.skynet-logistics.idx/` returned exactly the four real registered paths — native dirhunter genuinely reads registered Website pages, unlike `subfinder`.
+5. **Objective restructure** — split the old combined "scan+identify" nmap step and the old combined "lynx+dirhunter+browse" step into six single-action objectives (see Locked Objectives above), added `terminalCommand` icons for nmap/lynx/dirhunter, removed now-redundant hints on those three.
+6. **Report format** — added a `Url:` field to the audit report template/body, citing the discovered `/security` page URL.
+7. **Objective 01 gating** — removed the `OnStart()` auto-complete; Objective 01 now requires the player to actually open Adrian's mail (`Mail.Read` event).
+8. **Final pass — full PASS.** All six objectives completed in order, report accepted with the new `Url:` field, quest reached MISSION COMPLETE with $200 + 80 XP.
 
 ## Final Disposition
 
-**Q01 REVISED IMPLEMENTATION LOCKED.**
+**Q01 FINAL IMPLEMENTATION LOCKED — LIVE-VALIDATED PASS.**
 
-The Q01 target is now a genuine subdomain discovery flow driven by the reusable DSS `ReconService`. The four required subdomains are `www`, `portal`, `status`, and `security`; only `security` is the audit target, while `portal` and `status` are forbidden surfaces. Adrian's email omits the direct web URL and report answers. Further changes require explicit change control after this lock.
+The Q01 target is a single-host, path-based web surface (`www.skynet-logistics.idx` with `/`, `/portal`, `/status`, `/security`), discovered through a six-objective chain (mail → nmap → lynx → dirhunter → browse → submit) using exclusively native HackHub terminal tools plus one self-contained fallback command (`subfinders`, no longer required). Per `docs/phase13-sequential-campaign-lock.md`, this PASS unblocks Q02. Further changes to Q01 require explicit change control after this lock.

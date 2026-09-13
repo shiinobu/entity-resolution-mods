@@ -1,7 +1,7 @@
 # ENTITY RESOLUTION — Phase 13 Sequential Campaign Execution Lock
 
-Date: 2026-09-11
-Status: **LOCKED — CURRENT IMPLEMENTATION TARGET Q01**
+Date: 2026-09-11 (Q01 PASS recorded 2026-09-13)
+Status: **LOCKED — Q01 PASS; CURRENT IMPLEMENTATION TARGET Q02**
 
 ## Purpose
 
@@ -102,7 +102,7 @@ Q14 was previously implemented as an early downstream slice during Phase 13 expl
 
 Q14 must not be reintroduced into the production bootstrap until Q01–Q13 have each passed their live gates.
 
-## Current Target — Q01
+## Q01 — PASSED (2026-09-13)
 
 ```text
 Q01 — THE CONTRACT
@@ -115,7 +115,7 @@ The recovered source defines:
 - Adrian Cole as primary character;
 - target `203.0.113.42`;
 - expected services TCP 22/80/443;
-- five required player objectives;
+- six player objectives (mail read, nmap, lynx, dirhunter, browse, submit — see `docs/phase13-q01-final-lock.md`);
 - `entity_resolution.q01.completed = true` as persistent story state;
 - `$200` reward;
 - maximum `80 XP`.
@@ -136,11 +136,21 @@ Current production implementation files:
 src/content/q01.ts
 src/content/index.ts
 src/infrastructure/hackhub/q01-quest.ts
+src/infrastructure/hackhub/websites/q01-skynet-portal.ts
+src/infrastructure/hackhub/commands/q01-subfinder.ts
 src/index.ts
 manifest.json
 ```
 
-Q01 implementation is complete at source/runtime level and is now awaiting the live HackHub validation gate. It is not production-locked until that live gate passes.
+Q01 has passed its full live in-game validation gate (2026-09-13) — see `docs/phase13-q01-final-lock.md` and `docs/phase13-q01-live-validation.md`. It is now production-locked.
+
+## Current Target — Q02
+
+```text
+Q02 — THE ANOMALY (Chapter 1 — GHOST SERVER)
+```
+
+Full detailed source was recovered from an exported design conversation on 2026-09-13 (see `docs/phase13-q02-source-recovered.md`), closing the gap noted in `docs/phase13-step13.1-story-source-audit.md`. Q02 is now **implemented — live validation pending**: five objectives, $250 / 90 XP reward, gated behind `entity_resolution.q01` completion via `QuestsToComplete`. Awaiting real in-game confirmation before it can be marked PASS and Q03 becomes the target.
 
 ## Q01 Runtime Notes
 
