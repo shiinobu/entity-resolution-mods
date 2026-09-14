@@ -4,6 +4,7 @@ import "./infrastructure/hackhub/commands/q01-subfinder.js";
 import "./infrastructure/hackhub/websites/q01-skynet-portal.js";
 import "./infrastructure/hackhub/websites/q02-gateway-portal.js";
 import "./infrastructure/hackhub/websites/q02-edge-portal.js";
+import "./infrastructure/hackhub/websites/q02-cri-gateway-portal.js";
 import "./infrastructure/hackhub/q01-quest.js";
 import "./infrastructure/hackhub/q02-quest.js";
 

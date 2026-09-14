@@ -1,3 +1,5 @@
+import type { QuestHackhubPostDefinition } from "@hotbunny/hackhub-content-sdk";
+
 import { asId } from "../core/index.js";
 import { flagEquals } from "../domain/shared/index.js";
 import type { ReconProfile } from "../domain/recon/index.js";
@@ -149,6 +151,63 @@ export const Q01_ADRIAN_EMAIL = ADRIAN_COLE.email;
 export const Q01_REPORT_RECIPIENT = Q01_ADRIAN_EMAIL;
 export const Q01_REPORT_SUBJECT = "Security Audit — Jakarta";
 export const Q01_OPEN_PORTS = "443";
+
+// HackHub feed post shown before the quest is claimed. A short teaser that
+// points to the mail for details, rather than repeating the mail's content —
+// matches the pattern agreed for Q02 and locked as standard for Q03-Q16 (see
+// docs/phase13-quest-structure-standard.md).
+export const Q01_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
+    content: "Short audit for a client in Jakarta. Details in your mail.",
+    author: {
+        name: "Adrian Cole",
+        avatar: "assets/adrian-cole.png",
+    },
+};
+
+export const Q01_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = {
+    content: "DEV REPLAY — Q01 live-testing fixture. Apply to replay THE CONTRACT.",
+    author: {
+        name: "Adrian Cole [DEV]",
+        avatar: "assets/adrian-cole.png",
+    },
+};
+
+// Adrian's opening mail. Identical between production and replay (matching
+// Q02_INCOMING_MAIL_CONTENT's pattern) — the "DEV REPLAY" signal already
+// comes through Title/HackhubPost/author elsewhere, so the mail body itself
+// doesn't need its own divergent wording. Reuses Q01_REPORT_SUBJECT as its
+// subject (a single mail thread runs from this brief through the report to
+// the completion reply) — an intentional exception to the separate-subject
+// pattern locked for Q03-Q16; Q01 is FINAL LOCK and this threading is
+// already live-proven, so it is kept as historical precedent rather than
+// retrofitted.
+export const Q01_INCOMING_MAIL_CONTENT = [
+    "I have a client looking for a short security audit.",
+    "",
+    "Nothing complicated.",
+    "One external network.",
+    "A few services.",
+    "Basic vulnerability assessment.",
+    "",
+    "CLIENT",
+    "Location: Jakarta",
+    `Target: ${Q01_TARGET_IP}`,
+    "",
+    "Scope:",
+    "External infrastructure only.",
+    "",
+    "Authorized:",
+    "Network discovery",
+    "Service enumeration",
+    "Basic vulnerability checks",
+    "",
+    "Not Authorized:",
+    "Data extraction",
+    "Internal access",
+    "Credential attacks",
+    "",
+    "— Adrian",
+].join("\n");
 
 // GoMail compose template with fill-in-the-blank fields for the facts the
 // player must discover themselves. Mirrors Q02's Mail.registerTemplate setup

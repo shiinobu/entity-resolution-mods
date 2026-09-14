@@ -7,7 +7,7 @@ export interface CanonicalCharacterEmail {
 export const ADRIAN_COLE: CanonicalCharacterEmail = {
     id: "character.adrian.cole",
     name: "Adrian Cole",
-    email: "adrian.cole@entityresolution.lock",
+    email: "adrian.cole@phantom-net.void",
 };
 
 export const CANONICAL_CHARACTER_EMAILS = {

@@ -12,6 +12,8 @@ import {
     Q01_CLIENT_NAME,
     Q01_COMPLETION_MAIL_CONTENT_PRODUCTION,
     Q01_FINAL_STATE_FLAG,
+    Q01_HACKHUB_POST_PRODUCTION,
+    Q01_INCOMING_MAIL_CONTENT,
     Q01_LYNX_INPUT_IP,
     Q01_LYNX_INPUT_URL,
     Q01_LYNX_RESULT,
@@ -107,34 +109,6 @@ const normalizeHost = (rawHost: string): string | null => {
 const isExpectedDirhunterHost = (rawHost: string): boolean =>
     normalizeHost(rawHost) === Q01_WEB_HOME_HOST;
 
-const Q01_INCOMING_MAIL_CONTENT = [
-    "I have a client looking for a short security audit.",
-    "",
-    "Nothing complicated.",
-    "One external network.",
-    "A few services.",
-    "Basic vulnerability assessment.",
-    "",
-    "CLIENT",
-    "Location: Jakarta",
-    `Target: ${Q01_TARGET_IP}`,
-    "",
-    "Scope:",
-    "External infrastructure only.",
-    "",
-    "Authorized:",
-    "Network discovery",
-    "Service enumeration",
-    "Basic vulnerability checks",
-    "",
-    "Not Authorized:",
-    "Data extraction",
-    "Internal access",
-    "Credential attacks",
-    "",
-    "— Adrian",
-].join("\n");
-
 const markCanonicalCompletion = (): void => {
     gameRuntime.flagStore.set(Q01_FINAL_STATE_FLAG, true);
 };
@@ -160,14 +134,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         money: 0,
         xp: 0,
     };
-    override HackhubPost = {
-        content:
-            "Short security audit in Jakarta. One external network, a few services, basic vulnerability assessment. Adrian will provide the report submission format by email.",
-        author: {
-            name: "Adrian Cole",
-            avatar: "assets/adrian-cole.png",
-        },
-    };
+    override HackhubPost = Q01_HACKHUB_POST_PRODUCTION;
 
     override Objectives = Q01_OBJECTIVES;
 
@@ -288,7 +255,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         if (moneyGranted) {
             Bank.transaction({
                 amount: Q01_REWARDS.money,
-                description: "Security Audit — Jakarta",
+                description: Q01_REPORT_SUBJECT,
                 from: {
                     IBAN: "ID00SKYNETLOGISTICS",
                     name: Q01_CLIENT_NAME,
@@ -296,7 +263,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             });
         }
 
-        sendAdrianMail("Re: Security Audit — Jakarta", Q01_COMPLETION_MAIL_CONTENT_PRODUCTION);
+        sendAdrianMail(`Re: ${Q01_REPORT_SUBJECT}`, Q01_COMPLETION_MAIL_CONTENT_PRODUCTION);
         resetQ01ShellFixtures();
         // Deliberately NOT calling Mail.unregisterTemplate here — confirmed
         // live that GoMail re-renders a sent mail's history entry from its

@@ -21,7 +21,7 @@ Use a fresh replay build after each code change. Each replay build receives a ne
 3. Confirm Adrian's Q01 contract mail arrives from:
 
 ```text
-adrian.cole@entityresolution.lock
+adrian.cole@phantom-net.void
 ```
 
 4. Confirm the six locked objective names are presented in this order, with `nmap`/`lynx`/`dirhunter` icons on Objectives 02–04:
@@ -187,13 +187,13 @@ Adrian's sender identity is canonical and must never be randomized:
 
 ```text
 character.adrian.cole
-adrian.cole@entityresolution.lock
+adrian.cole@phantom-net.void
 ```
 
 Submission values are discovered rather than supplied directly:
 
 ```text
-recipient = adrian.cole@entityresolution.lock
+recipient = adrian.cole@phantom-net.void
 subject   = Security Audit — Jakarta
 body      = resolved report using the supplied template (Target/Open Ports/Url)
 ```

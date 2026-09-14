@@ -56,7 +56,7 @@ Objectives 02, 03, and 04 each declare `terminalCommand` (`nmap`, `lynx`, `dirhu
 
 ## Objective 01 — Mail-Gated (not auto-complete)
 
-Objective 01 does **not** complete automatically when the quest starts. `OnStart()` only sends Adrian's contract mail and sets up the network/domain; it does not call `completeObjective`. Completion requires the native `Mail.Read` event to fire for a message where `from === adrian.cole@entityresolution.lock` and `subject === "Security Audit — Jakarta"` — i.e. the player must actually open the mail. This gates Objective 02 (nmap) from unlocking until the player has read the brief.
+Objective 01 does **not** complete automatically when the quest starts. `OnStart()` only sends Adrian's contract mail and sets up the network/domain; it does not call `completeObjective`. Completion requires the native `Mail.Read` event to fire for a message where `from === adrian.cole@phantom-net.void` (updated 2026-09-14 from `entityresolution.lock`, see `docs/email-character-contract.md`) and `subject === "Security Audit — Jakarta"` — i.e. the player must actually open the mail. This gates Objective 02 (nmap) from unlocking until the player has read the brief.
 
 ## Locked Service Facts
 
@@ -192,7 +192,7 @@ Adrian Cole remains canonical:
 
 ```text
 character.adrian.cole
-adrian.cole@entityresolution.lock
+adrian.cole@phantom-net.void
 ```
 
 The incoming email does not expose the web audit URL, company answer, open-port answer, or security-page URL.

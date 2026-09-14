@@ -10,6 +10,8 @@ import {
     Q01_ADRIAN_EMAIL,
     Q01_CLIENT_NAME,
     Q01_COMPLETION_MAIL_CONTENT_REPLAY,
+    Q01_HACKHUB_POST_REPLAY,
+    Q01_INCOMING_MAIL_CONTENT,
     Q01_LYNX_INPUT_IP,
     Q01_LYNX_INPUT_URL,
     Q01_LYNX_RESULT,
@@ -94,30 +96,6 @@ const normalizeHost = (rawHost: string): string | null => {
 const isExpectedDirhunterHost = (rawHost: string): boolean =>
     normalizeHost(rawHost) === Q01_WEB_HOME_HOST;
 
-const Q01_INCOMING_MAIL_CONTENT = [
-    "DEV REPLAY — Q01 TEST CONTRACT",
-    "",
-    "CLIENT",
-    "Location: Jakarta",
-    `Target: ${Q01_TARGET_IP}`,
-    "",
-    "Scope:",
-    "External infrastructure only.",
-    "",
-    "Authorized:",
-    "Network discovery",
-    "Service enumeration",
-    "Basic vulnerability checks",
-    "",
-    "Not Authorized:",
-    "Data extraction",
-    "Internal access",
-    "Credential attacks",
-    "",
-    "This mail belongs to the development replay fixture.",
-    "— Adrian",
-].join("\n");
-
 export const Q01_REPLAY_QUEST_NAME = `entity_resolution.dev.q01.${DEV_Q01_REPLAY_ID}`;
 
 @RegisterQuest
@@ -130,13 +108,7 @@ export class EntityResolutionQ01ReplayQuest extends HackHubQuest<Q01ReplayData> 
     override AutoStart = false;
     override AutoComplete = true;
     override Rewards = { money: 0, xp: 0 };
-    override HackhubPost = {
-        content: "DEV REPLAY — Q01 live-testing fixture. Apply to replay THE CONTRACT.",
-        author: {
-            name: "Adrian Cole [DEV]",
-            avatar: "assets/adrian-cole.png",
-        },
-    };
+    override HackhubPost = Q01_HACKHUB_POST_REPLAY;
 
     override Objectives = Q01_OBJECTIVES;
 

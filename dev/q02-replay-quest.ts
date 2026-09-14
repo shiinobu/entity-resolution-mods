@@ -12,6 +12,7 @@ import {
     Q02_CERTIFICATE_ISSUER,
     Q02_COMPLETION_DELAY_MS,
     Q02_COMPLETION_MAIL_CONTENT_REPLAY,
+    Q02_HACKHUB_POST_REPLAY,
     Q02_GATEWAY_IP,
     Q02_GATEWAY_SERVICE_NAME,
     Q02_HIDDEN_HOSTNAME,
@@ -91,13 +92,7 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
     // No QuestsToComplete gate — replay quests are started independently per
     // quest for fast iteration; production enforces the real Q01 dependency.
     override Rewards = { money: 0, xp: 0 };
-    override HackhubPost = {
-        content: "DEV REPLAY — Q02 live-testing fixture. Apply to replay THE ANOMALY.",
-        author: {
-            name: "Adrian Cole [DEV]",
-            avatar: "assets/adrian-cole.png",
-        },
-    };
+    override HackhubPost = Q02_HACKHUB_POST_REPLAY;
 
     override Objectives = Q02_OBJECTIVES;
 
@@ -125,6 +120,9 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
         Network.registerDomain(Q02_WEB_HOST, this.Data.targetIp);
         // Q02_GATEWAY_IP is a raw IP used directly as a Website host, not a
         // hostname to resolve — no Network.registerDomain mapping applies.
+
+        // Mirrors production — see q02-quest.ts for the rationale.
+        Network.registerDomain(Q02_HIDDEN_HOSTNAME, Q02_HIDDEN_HOSTNAME_IP);
 
         sendAdrianMail(Q02_INCOMING_MAIL_SUBJECT, Q02_INCOMING_MAIL_CONTENT);
     }
@@ -194,12 +192,14 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
         // retroactively, turning it into raw JSON. Leaving templates
         // registered is harmless (a small, permanent compose-dropdown entry).
         Network.removeDomain(Q02_WEB_HOST);
+        Network.removeDomain(Q02_HIDDEN_HOSTNAME);
         Network.destroyNetwork(this.Data.targetIp);
     }
 
     override OnAbandon() {
         resetQ02ShellFixtures();
         Network.removeDomain(Q02_WEB_HOST);
+        Network.removeDomain(Q02_HIDDEN_HOSTNAME);
         Network.destroyNetwork(this.Data.targetIp);
     }
 
@@ -265,7 +265,14 @@ export class EntityResolutionQ02ReplayQuest extends HackHubQuest<Q02ReplayData> 
                 return;
             }
 
-            this.SetData("dnsChecked", true);
+            // Rolled back from a ping-based trigger (Terminal.Ping did not
+            // surface the hidden objective live) to isolate whether the
+            // problem was the event or the hidden-objective mechanism
+            // itself — mirrors q02-quest.ts.
+            if (!this.Data.dnsChecked) {
+                this.SetData("dnsChecked", true);
+                this.completeObjective(Q02_OBJECTIVE_IDS.checkDns);
+            }
         }
     }
 

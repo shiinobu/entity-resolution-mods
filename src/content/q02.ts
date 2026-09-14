@@ -1,3 +1,5 @@
+import type { QuestHackhubPostDefinition } from "@hotbunny/hackhub-content-sdk";
+
 import { asId } from "../core/index.js";
 import { flagEquals } from "../domain/shared/index.js";
 import type { Quest } from "../domain/quest/index.js";
@@ -108,17 +110,36 @@ export const Q02_REPORT_BODY = [
     "Recommendation: Confirm ownership and purpose of the host.",
 ].join("\n");
 
-export const Q02_INCOMING_MAIL_SUBJECT = "One more thing";
+// HackHub feed post shown before the quest is claimed. A short teaser that
+// points to the mail for details, matching the pattern locked as standard
+// for Q03-Q16 (see docs/phase13-quest-structure-standard.md).
+export const Q02_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
+    content: "Follow-up from the last client. Check your mail.",
+    author: {
+        name: "Adrian Cole",
+        avatar: "assets/adrian-cole.png",
+    },
+};
+
+export const Q02_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = {
+    content: "DEV REPLAY — Q02 live-testing fixture. Apply to replay THE ANOMALY.",
+    author: {
+        name: "Adrian Cole [DEV]",
+        avatar: "assets/adrian-cole.png",
+    },
+};
+
+export const Q02_INCOMING_MAIL_SUBJECT = "Quick follow-up";
 
 export const Q02_INCOMING_MAIL_CONTENT = [
-    "Client has one more thing.",
+    "Got a small follow-up from the client after your last report.",
     "",
-    "Their external scan doesn't match their internal asset list.",
-    "Can you take a look?",
-    "",
+    "FOLLOW-UP",
+    `Client: ${Q02_CLIENT_NAME}`,
     `Host: ${Q02_WEB_HOST}`,
+    "Note: Not listed in their asset inventory.",
     "",
-    "It may just be an old asset. Check before I tell the client.",
+    "Might just be something old they forgot about. Check it before I bring it up with them.",
     "",
     "— Adrian",
 ].join("\n");
@@ -160,6 +181,7 @@ export const Q02_OBJECTIVE_IDS = {
     checkTarget: "q02.objective.01",
     scanHost: "q02.objective.02",
     identifyService: "q02.objective.03",
+    checkDns: "q02.objective.03b",
     inspectCertificate: "q02.objective.04",
     reportAnomaly: "q02.objective.05",
 } as const;
@@ -182,6 +204,18 @@ export const Q02_OBJECTIVES = [
         name: Q02_OBJECTIVE_IDS.identifyService,
         description: "Identify the service",
         unlocksAfter: [Q02_OBJECTIVE_IDS.scanHost],
+    },
+    // Optional bonus, deliberately placed between Obj03 and Obj04. `hidden`
+    // is undocumented in the SDK's .d.ts — this is experimental, not yet
+    // live-confirmed to actually stay invisible until completeObjective()
+    // fires for it. Completed only when the player pings the private IP
+    // revealed by nslookup (Terminal.Ping isUp === false), not merely on
+    // the nslookup lookup itself — see q02-quest.ts's handlePing.
+    {
+        name: Q02_OBJECTIVE_IDS.checkDns,
+        description: "Check the DNS",
+        hidden: true,
+        unlocksAfter: [Q02_OBJECTIVE_IDS.identifyService],
     },
     {
         name: Q02_OBJECTIVE_IDS.inspectCertificate,

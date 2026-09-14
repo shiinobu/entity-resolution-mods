@@ -337,8 +337,36 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         assert.doesNotMatch(replayQuestSource, /Format report audit:/);
     });
 
+    it("declares HackhubPost and the incoming mail in content/q01.ts instead of as inline literals in the quest files — a teaser that points to the mail, not a near-duplicate of its body", () => {
+        assert.match(q01ContentSource, /export const Q01_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = \{/);
+        assert.match(q01ContentSource, /export const Q01_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = \{/);
+        assert.match(q01ContentSource, /Short audit for a client in Jakarta\. Details in your mail\./);
+        assert.match(q01ContentSource, /export const Q01_INCOMING_MAIL_CONTENT = \[/);
+
+        assert.match(questSource, /override HackhubPost = Q01_HACKHUB_POST_PRODUCTION;/);
+        assert.match(replayQuestSource, /override HackhubPost = Q01_HACKHUB_POST_REPLAY;/);
+        assert.doesNotMatch(questSource, /override HackhubPost = \{/);
+        assert.doesNotMatch(replayQuestSource, /override HackhubPost = \{/);
+        assert.doesNotMatch(questSource, /const Q01_INCOMING_MAIL_CONTENT =/);
+        assert.doesNotMatch(replayQuestSource, /const Q01_INCOMING_MAIL_CONTENT =/);
+    });
+
+    it("sends the identical incoming mail body in production and replay — matches Q02_INCOMING_MAIL_CONTENT's already-shared pattern; the DEV signal comes through Title/HackhubPost/author instead", () => {
+        assert.doesNotMatch(q01ContentSource, /Q01_INCOMING_MAIL_CONTENT_PRODUCTION/);
+        assert.doesNotMatch(q01ContentSource, /Q01_INCOMING_MAIL_CONTENT_REPLAY/);
+        assert.doesNotMatch(q01ContentSource, /DEV REPLAY — Q01 TEST CONTRACT/);
+        assert.match(questSource, /sendAdrianMail\(Q01_REPORT_SUBJECT, Q01_INCOMING_MAIL_CONTENT\);/);
+        assert.match(replayQuestSource, /content: Q01_INCOMING_MAIL_CONTENT,/);
+    });
+
+    it("reuses Q01_REPORT_SUBJECT as a constant/template everywhere instead of a duplicated magic-string literal", () => {
+        assert.doesNotMatch(questSource, /"Security Audit — Jakarta"/);
+        assert.match(questSource, /description: Q01_REPORT_SUBJECT,/);
+        assert.match(questSource, /sendAdrianMail\(`Re: \$\{Q01_REPORT_SUBJECT\}`, Q01_COMPLETION_MAIL_CONTENT_PRODUCTION\);/);
+    });
+
     it("defines the canonical email identity and player-facing report template", () => {
-        assert.equal(Q01_ADRIAN_EMAIL, "adrian.cole@entityresolution.lock");
+        assert.equal(Q01_ADRIAN_EMAIL, "adrian.cole@phantom-net.void");
         assert.equal(Q01_REPORT_RECIPIENT, Q01_ADRIAN_EMAIL);
         assert.equal(Q01_REPORT_SUBJECT, "Security Audit — Jakarta");
         assert.equal(

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connection Timeout</title>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            color: #9fb6b2;
+            background: #05070a;
+        }
+        .panel {
+            width: min(640px, 92vw);
+            margin: 48px auto;
+            border: 1px solid #1c2426;
+            border-radius: 12px;
+            padding: 28px 32px;
+            background: rgba(8, 11, 13, 0.94);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        .dim { color: #52605e; }
+        .fail { color: #ff8f6b; }
+
+        /* Boot sequence: each line is invisible at rest and revealed once,
+           at a fixed delay, settling on the full failure state. */
+        .line { opacity: 0; }
+        .line-first { opacity: 1; }
+
+        .line-connect,
+        .line-retry,
+        .line-fail,
+        .line-route,
+        .line-status {
+            animation: reveal 0.01s linear forwards;
+        }
+
+        .line-connect { animation-delay: 1.5s; }
+        .line-retry   { animation-delay: 3.0s; margin-bottom: 16px; }
+        .line-fail    { animation-delay: 7.0s; margin-top: 14px; }
+        .line-route   { animation-delay: 7.3s; }
+        .line-status  { animation-delay: 7.6s; }
+
+        @keyframes reveal {
+            to { opacity: 1; }
+        }
+
+        /* Terminal-style "..." — each dot reveals in turn, then a colored
+           status word lands: green "ok" for the successful resolve, red
+           "error" for the failed connect attempt. */
+        .dot { opacity: 0; animation: reveal 0.01s linear forwards; }
+        .status-word { opacity: 0; animation: reveal 0.01s linear forwards; }
+        .status-ok { color: #82c99b; }
+        .status-error { color: #ff8f6b; }
+
+        .resolve-dot-1 { animation-delay: .3s; }
+        .resolve-dot-2 { animation-delay: .6s; }
+        .resolve-dot-3 { animation-delay: .9s; }
+        .resolve-status { animation-delay: 1.2s; }
+
+        .connect-dot-1 { animation-delay: 1.8s; }
+        .connect-dot-2 { animation-delay: 2.1s; }
+        .connect-dot-3 { animation-delay: 2.4s; }
+        .connect-status { animation-delay: 2.7s; }
+
+        /* ASCII progress bar: a monospace fill overlay that fills FULL on
+           every attempt (never stops mid-fill) before failing and — for
+           the final attempt only — resting FULL in red, in chunky steps()
+           rather than a smooth tween, so it reads as a terminal redrawing. */
+        .ascii-bar {
+            position: relative;
+            display: inline-block;
+            color: #2e3a38;
+            letter-spacing: -1px;
+            white-space: nowrap;
+        }
+
+        .ascii-bar-fill {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            width: 0%;
+            color: #6fa39c;
+            white-space: nowrap;
+            animation: barFill 3.8s steps(30) 3.0s 1 both;
+        }
+
+        @keyframes barFill {
+            0%     { width: 0%;   color: #6fa39c; }
+            42.1%  { width: 100%; color: #6fa39c; }
+            44.7%  { width: 0%;   color: #6fa39c; }
+            99.9%  { color: #6fa39c; }
+            100%   { width: 100%; color: #ff8f6b; }
+        }
+
+        .retry-count::after {
+            content: "retry 1/2";
+            animation: retryCount 3.8s steps(1) 3.0s 1 both;
+        }
+
+        @keyframes retryCount {
+            0%     { content: "retry 1/2"; }
+            42.1%  { content: "retry 1/2 — failed"; }
+            44.7%  { content: "retry 2/2"; }
+            100%   { content: "retry 2/2 — failed"; }
+        }
+
+        .status-line {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            letter-spacing: 0.08em;
+            color: #ff8f6b;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff8f6b;
+            animation: pulse 1.6s ease-in-out 7.6s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.25; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .line, .dot, .status-word {
+                opacity: 1 !important;
+                animation: none !important;
+            }
+            .ascii-bar-fill {
+                width: 100% !important;
+                color: #ff8f6b !important;
+                animation: none !important;
+            }
+            .retry-count::after {
+                content: "retry 2/2 — failed" !important;
+                animation: none !important;
+            }
+            .status-dot { animation: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="line line-first">resolving <span class="dim">__TARGET__</span>
+            <span class="dot resolve-dot-1">.</span><span class="dot resolve-dot-2">.</span><span class="dot resolve-dot-3">.</span>
+            <span class="status-word status-ok resolve-status">ok</span>
+        </div>
+        <div class="line line-connect">connecting to <span class="dim">__TARGET__:__PORT__</span>
+            <span class="dot connect-dot-1">.</span><span class="dot connect-dot-2">.</span><span class="dot connect-dot-3">.</span>
+            <span class="status-word status-error connect-status">error</span>
+        </div>
+        <div class="line line-retry">
+            <span class="ascii-bar" aria-hidden="true">
+                <span class="ascii-bar-base">[......................]</span>
+                <span class="ascii-bar-fill">[######################]</span>
+            </span>
+            <span class="retry-count"></span>
+        </div>
+        <div class="line line-fail fail">connection timed out — no response after 12,000ms</div>
+        <div class="line line-route dim">route: no reply from upstream hop</div>
+        <div class="line line-status status-line"><span class="status-dot"></span>SIGNAL LOST</div>
+    </div>
+</body>
+</html>

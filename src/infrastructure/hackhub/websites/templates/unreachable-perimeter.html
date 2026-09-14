@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Route Not Permitted</title>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: #aeb5b8;
+            background: #12181c;
+        }
+        .panel {
+            width: min(560px, 92vw);
+            margin: 64px auto;
+            border: 1px solid #232c31;
+            border-radius: 10px;
+            padding: 40px 36px;
+            background: rgba(15, 20, 24, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+        .panel::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 4px;
+            background: #c9a227;
+        }
+        .glyph { color: #c9a227; margin-bottom: 18px; display: block; }
+        h1 {
+            font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+            font-size: 1.05rem;
+            letter-spacing: 0.08em;
+            margin: 0 0 14px;
+            color: #e7e9e6;
+        }
+        p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 42ch;
+            color: #aeb5b8;
+        }
+        .code-line {
+            font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+            font-size: 0.8rem;
+            color: #7c8386;
+            border-top: 1px solid #232c31;
+            padding-top: 14px;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <svg class="glyph" width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="6" y1="6" x2="6" y2="28"></line>
+            <line x1="28" y1="6" x2="28" y2="28"></line>
+            <line x1="4" y1="14" x2="30" y2="14"></line>
+        </svg>
+        <h1>ROUTE NOT PERMITTED</h1>
+        <p>This destination is not reachable from your current network segment.</p>
+        <div class="code-line">SEGMENT: __SEGMENT_CODE__ &rarr; DENIED</div>
+    </div>
+</body>
+</html>

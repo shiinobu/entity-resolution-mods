@@ -15,6 +15,7 @@ import {
     Q02_COMPLETION_DELAY_MS,
     Q02_COMPLETION_MAIL_CONTENT_PRODUCTION,
     Q02_FINAL_STATE_FLAG,
+    Q02_HACKHUB_POST_PRODUCTION,
     Q02_GATEWAY_IP,
     Q02_GATEWAY_SERVICE_NAME,
     Q02_HIDDEN_HOSTNAME,
@@ -113,14 +114,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         money: 0,
         xp: 0,
     };
-    override HackhubPost = {
-        content:
-            "One more thing from the last client. An unregistered host showed up in their external scan.",
-        author: {
-            name: "Adrian Cole",
-            avatar: "assets/adrian-cole.png",
-        },
-    };
+    override HackhubPost = Q02_HACKHUB_POST_PRODUCTION;
 
     override Objectives = Q02_OBJECTIVES;
 
@@ -151,6 +145,12 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         // Q02_GATEWAY_IP is a raw IP used directly as a Website host — it is
         // not a hostname resolving to another IP, so no Network.registerDomain
         // mapping applies here (experimental; see docs/phase13-q02-source-recovered.md).
+
+        // The hidden SAN hostname resolves too, so Q02CriGatewayHostnameWebsite
+        // can serve its connection-timeout page — separate from (and unrelated
+        // to) the nslookup terminal fixture, which is wired independently via
+        // Shell.addCommandData.
+        Network.registerDomain(Q02_HIDDEN_HOSTNAME, Q02_HIDDEN_HOSTNAME_IP);
 
         sendAdrianMail(Q02_INCOMING_MAIL_SUBJECT, Q02_INCOMING_MAIL_CONTENT);
     }
@@ -280,6 +280,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         // retroactively, turning it into raw JSON. Leaving templates
         // registered is harmless (a small, permanent compose-dropdown entry).
         Network.removeDomain(Q02_WEB_HOST);
+        Network.removeDomain(Q02_HIDDEN_HOSTNAME);
         Network.destroyNetwork(this.Data.targetIp);
         gameRuntime.persistence.save();
     }
@@ -287,6 +288,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
     override OnAbandon() {
         resetQ02ShellFixtures();
         Network.removeDomain(Q02_WEB_HOST);
+        Network.removeDomain(Q02_HIDDEN_HOSTNAME);
         Network.destroyNetwork(this.Data.targetIp);
     }
 
@@ -355,7 +357,15 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
                 return;
             }
 
-            this.SetData("dnsChecked", true);
+            // Rolled back from a ping-based trigger (Terminal.Ping did not
+            // surface the hidden objective live) to isolate whether the
+            // problem was the event or the hidden-objective mechanism
+            // itself — nslookup via Terminal.Command is already proven
+            // reliable elsewhere in this file (Obj02/03).
+            if (!this.Data.dnsChecked) {
+                this.SetData("dnsChecked", true);
+                this.completeObjective(Q02_OBJECTIVE_IDS.checkDns);
+            }
         }
     }
 

@@ -88,13 +88,42 @@ const gatewayPortalSource = readFileSync(
     "utf8",
 );
 
+const criGatewayPortalSource = readFileSync(
+    resolve(
+        fileURLToPath(
+            new URL(
+                "../src/infrastructure/hackhub/websites/q02-cri-gateway-portal.ts",
+                import.meta.url,
+            ),
+        ),
+    ),
+    "utf8",
+);
+
+const diagnosticTemplateSource = readFileSync(
+    resolve(
+        fileURLToPath(
+            new URL(
+                "../src/infrastructure/hackhub/websites/templates/unreachable-diagnostic.html",
+                import.meta.url,
+            ),
+        ),
+    ),
+    "utf8",
+);
+
+const replayEntrySource = readFileSync(
+    resolve(fileURLToPath(new URL("../dev/q01-replay-entry.ts", import.meta.url))),
+    "utf8",
+);
+
 describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pending)", () => {
     it("matches the recovered quest identity and target", () => {
         assert.equal(Q02_THE_ANOMALY.id, "entity_resolution.q02");
         assert.equal(Q02_THE_ANOMALY.title, "THE ANOMALY");
         assert.equal(Q02_CLIENT_NAME, "Skynet Logistics");
         assert.equal(Q02_WEB_HOST, "edge-03.skynet-logistics.idx");
-        assert.equal(Q02_ADRIAN_EMAIL, "adrian.cole@entityresolution.lock");
+        assert.equal(Q02_ADRIAN_EMAIL, "adrian.cole@phantom-net.void");
         assert.equal(Q02_TARGET_IP, "203.0.113.77");
     });
 
@@ -103,11 +132,12 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.equal(Q02_HIDDEN_HOSTNAME_IP, "10.42.7.18");
     });
 
-    it("defines five player objective ids", () => {
+    it("defines five mandatory player objective ids plus the hidden DNS bonus", () => {
         assert.deepEqual(Q02_OBJECTIVE_IDS, {
             checkTarget: "q02.objective.01",
             scanHost: "q02.objective.02",
             identifyService: "q02.objective.03",
+            checkDns: "q02.objective.03b",
             inspectCertificate: "q02.objective.04",
             reportAnomaly: "q02.objective.05",
         });
@@ -140,6 +170,17 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
                 Q02_REWARDS.checkDns,
             90,
         );
+    });
+
+    it("declares HackhubPost in content/q02.ts instead of as an inline literal in the quest files — a teaser that points to the mail, not a near-duplicate of its body", () => {
+        assert.match(q02ContentSource, /export const Q02_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = \{/);
+        assert.match(q02ContentSource, /export const Q02_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = \{/);
+        assert.match(q02ContentSource, /Follow-up from the last client\. Check your mail\./);
+
+        assert.match(questSource, /override HackhubPost = Q02_HACKHUB_POST_PRODUCTION;/);
+        assert.match(replaySource, /override HackhubPost = Q02_HACKHUB_POST_REPLAY;/);
+        assert.doesNotMatch(questSource, /override HackhubPost = \{/);
+        assert.doesNotMatch(replaySource, /override HackhubPost = \{/);
     });
 
     it("shares Q02_COMPLETION_MAIL_CONTENT_PRODUCTION / _REPLAY from content/q02.ts instead of duplicating the literal in each quest file — production mentions the real money reward, replay does not", () => {
@@ -248,11 +289,87 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.match(replaySource, /override Objectives = Q02_OBJECTIVES;/);
         assert.match(questSource, /ports: Q02_NETWORK_PORTS,/);
         assert.match(replaySource, /ports: Q02_NETWORK_PORTS,/);
+        // Rolled back: Q02 is final-locked, so it keeps the real gated
+        // objectives in replay too. The unlocksAfter-free display variant
+        // this quest experimented with is reserved for Q03+ instead — see
+        // docs/phase13-quest-structure-standard.md.
+        assert.doesNotMatch(q02ContentSource, /Q02_REPLAY_OBJECTIVES/);
+        assert.doesNotMatch(replaySource, /Q02_REPLAY_OBJECTIVES/);
+    });
+
+    it("places the hidden optional DNS-check bonus between Objective 03 and Objective 04, unlocking after identifyService like Obj04 does", () => {
+        const objectivesBlock = q02ContentSource.match(
+            /export const Q02_OBJECTIVES = \[[\s\S]*?\n\];/,
+        );
+        assert.ok(objectivesBlock, "expected to find the Q02_OBJECTIVES array");
+
+        const identifyServiceIndex = objectivesBlock![0].indexOf(
+            "Q02_OBJECTIVE_IDS.identifyService",
+        );
+        const checkDnsIndex = objectivesBlock![0].indexOf(
+            "Q02_OBJECTIVE_IDS.checkDns",
+        );
+        const inspectCertificateIndex = objectivesBlock![0].indexOf(
+            "Q02_OBJECTIVE_IDS.inspectCertificate",
+        );
+
+        assert.ok(identifyServiceIndex < checkDnsIndex);
+        assert.ok(checkDnsIndex < inspectCertificateIndex);
+        assert.match(objectivesBlock![0], /name: Q02_OBJECTIVE_IDS\.checkDns,[\s\S]*?hidden: true,/);
+    });
+
+    it("completes the hidden DNS-check bonus directly on nslookup — rolled back from a Terminal.Ping trigger that did not surface the hidden objective live, to isolate the actual cause", () => {
+        assert.doesNotMatch(questSource, /"Terminal\.Ping"/);
+        assert.doesNotMatch(questSource, /handlePing/);
+        assert.doesNotMatch(replaySource, /"Terminal\.Ping"/);
+        assert.doesNotMatch(replaySource, /handlePing/);
+
+        for (const source of [questSource, replaySource]) {
+            assert.match(
+                source,
+                /if \(!this\.Data\.dnsChecked\) \{\s*this\.SetData\("dnsChecked", true\);\s*this\.completeObjective\(Q02_OBJECTIVE_IDS\.checkDns\);\s*\}/,
+            );
+        }
     });
 
     it("gives edge-03.skynet-logistics.idx its own browsable Website (not just a nmap/nslookup fixture)", () => {
         assert.match(edgePortalSource, /Host = Q02_WEB_HOST/);
         assert.equal(Q02_EDGE_SITE_NAME, `${Q02_CLIENT_NAME} — Edge Node`);
+    });
+
+    it("gates edge-03's page on protocol — port 80 is absent from Q02_NMAP_RESULT (defaults to CLOSE), so plain HTTP must return 400 per the mandatory protocol-gating rule", () => {
+        assert.doesNotMatch(q02ContentSource, /\{ port: 80,/);
+        assert.match(edgePortalSource, /DynamicWebsitePageDefinition/);
+        assert.match(edgePortalSource, /context\.url\.startsWith\("https:"\)/);
+        assert.match(edgePortalSource, /q02-edge-http-error\.html/);
+    });
+
+    it("renders a connection-timeout page for the hidden CRI hostname and its private IP, instead of the native 404 both used to show on any protocol", () => {
+        assert.match(criGatewayPortalSource, /Host = Q02_HIDDEN_HOSTNAME;/);
+        assert.match(criGatewayPortalSource, /Host = Q02_HIDDEN_HOSTNAME_IP;/);
+        assert.match(criGatewayPortalSource, /import diagnosticTemplate from ".\/templates\/unreachable-diagnostic\.html";/);
+        assert.match(diagnosticTemplateSource, /__TARGET__/);
+        assert.match(diagnosticTemplateSource, /__PORT__/);
+
+        // Both quest files must resolve the hostname (the raw IP needs no
+        // domain registration, matching Q02GatewayWebsite's pattern) and
+        // tear it down symmetrically with Q02_WEB_HOST.
+        for (const source of [questSource, replaySource]) {
+            assert.match(
+                source,
+                /Network\.registerDomain\(Q02_HIDDEN_HOSTNAME, Q02_HIDDEN_HOSTNAME_IP\);/,
+            );
+            assert.match(source, /Network\.removeDomain\(Q02_HIDDEN_HOSTNAME\);/);
+        }
+
+        assert.match(
+            productionEntrySource,
+            /import "\.\/infrastructure\/hackhub\/websites\/q02-cri-gateway-portal\.js";/,
+        );
+        assert.match(
+            replayEntrySource,
+            /import "\.\.\/src\/infrastructure\/hackhub\/websites\/q02-cri-gateway-portal\.js";/,
+        );
     });
 
     it("does not mail-warn on plain HTTP — Adrian has no visibility into the player's own browser, so the nginx-style page is the only feedback", () => {
