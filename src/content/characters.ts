@@ -58,6 +58,23 @@ export const ELENA_BROOKS: CanonicalCharacterEmail = {
     email: "elena.brooks@phantom-net.void",
 };
 
+// The 7th and final roster member (source's own character list: "Adrian
+// Cole, Maya Hart, Daniel Ward, Victor Hale, Elena Brooks, Marcus Reed,
+// Unknown"). "Unknown" is the character's own canonical in-story label,
+// not a placeholder this project invented — their real name is
+// deliberately withheld even after Q16's confrontation (Q15's LOCKED
+// source: "OPERATOR NAME: WITHHELD"; explicitly never-created flag
+// `operator_identity_revealed`). Only their technical identity reference,
+// ARKA-OPS-0441, is ever confirmed — used as the email local-part instead
+// of inventing a real name. TODO: confirm whether this address is ever
+// actually used in-game (mail/Relay) once Q16 is implemented; may end up
+// unused if Unknown only ever appears via Dialog.
+export const UNKNOWN: CanonicalCharacterEmail = {
+    id: "character.unknown",
+    name: "Unknown",
+    email: "arka-ops-0441@phantom-net.void",
+};
+
 export const CANONICAL_CHARACTER_EMAILS = {
     adrianCole: ADRIAN_COLE.email,
     mayaHart: MAYA_HART.email,
@@ -65,4 +82,5 @@ export const CANONICAL_CHARACTER_EMAILS = {
     marcusReed: MARCUS_REED.email,
     victor: VICTOR.email,
     elenaBrooks: ELENA_BROOKS.email,
+    unknown: UNKNOWN.email,
 } as const;
