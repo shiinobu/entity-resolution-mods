@@ -209,16 +209,36 @@ generous fixed delay from call-start instead.
 
 Full technical detail: `docs/phase13-q03-source-recovered.md`.
 
-### Q04–Q16 — not yet source-recovered into this repo
+### Q04–Q16 — SKELETON ONLY, no quest registered/implemented
 
-Phase 8 (external design source) remains the source of truth for these
-quests' objectives per `docs/phase13-sequential-campaign-lock.md`, but none
-of them have been pulled into a `docs/phase13-qNN-source-recovered.md` file
-yet. No tool usage can be listed here until each quest's source-recovery
-step happens, per the project's sequential execution rule (Q(n+1) is not
-even started until Q(n) passes live validation). This section will be
-filled in quest-by-quest as that happens — add a row here in the same PASS/
-CONFIRMED format as Q01–Q03 above, never speculatively ahead of time.
+A structural skeleton (objectives/rewards/flags/dialogue/mail where
+sourced) exists for all of Q04–Q16 as of 2026-09-16 — see
+`docs/phase13-q04-q16-skeleton-scaffold.md` for the full inventory. None
+are wired into `src/index.ts`; none have real command/event logic. Tool
+mappings below are the skeleton's `// tool:` comments (provisional,
+confirm when each quest is actually implemented), not confirmed live
+usage — do not treat this table as PASS/CONFIRMED the way Q01–Q03's rows
+above are.
+
+| Quest | Native tools (provisional) | Custom commands |
+|---|---|---|
+| Q04 | `nmap`, `ssh`+`ls`/`cat` | — |
+| Q05 | `dirhunter`, `lynx` | — |
+| Q06 | `sqlmap` | — |
+| Q07 | `sqlmap` | `netgraph` |
+| Q08 | `sqlmap` | — |
+| Q09 | `sqlmap` | — |
+| Q10 | `ssh`+`ls`/`cat`, `sqlmap` | — |
+| Q11 | `ssh`+`cat`, `sqlmap` | — |
+| Q12 | `sqlmap` | — |
+| Q13 | `sqlmap`, `whois` | — |
+| Q14 | `Files.*` local access (NOT ssh/network — see skeleton-scaffold doc) | — |
+| Q15 | `Files.*` local access + `openssl` decrypt (NOT ssh/network) | `timeline`, `chaintrace` |
+| Q16 | `sqlmap`, `cat` | `interventiontrace` |
+
+This section will be replaced quest-by-quest with the same PASS/CONFIRMED
+format as Q01–Q03 above as each quest is actually implemented and live-
+tested — never mark a row PASS/CONFIRMED speculatively ahead of that.
 
 ## 4. Reference: Metasploit (real-world tool — not yet used in this project)
 

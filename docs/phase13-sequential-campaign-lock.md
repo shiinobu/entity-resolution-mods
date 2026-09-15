@@ -222,7 +222,18 @@ manifest.json
 
 ## Current Target — Q04
 
-Not yet started. Source recovery from the campaign design document (`ChatGPT-Mengenal Website HackHub-20260913-2050.md`) has not begun for Q04.
+Not yet started (no real implementation/logic, not registered in
+`src/index.ts`). Source recovery from the campaign design document
+(`ChatGPT-Mengenal Website HackHub-20260913-2050.md`) is done for Q04
+through Q16 at objective/reward level, and a structural skeleton (content/
+quest/replay files, no gameplay logic) exists for all of them as of
+2026-09-16 — see `docs/phase13-q04-q16-skeleton-scaffold.md` and
+`docs/phase13-q04-q16-design-recovered.md`. Q14/Q15 additionally have a
+dedicated, more-authoritative LOCKED v1.0 source (two `.docx` files) — see
+the skeleton-scaffold doc's reconciliation section. None of this changes
+the Sequential Execution Rule above: Q05–Q16 remain dormant/unregistered
+until Q04 (then each predecessor in turn) actually passes its live
+validation gate.
 
 ## Q01 Runtime Notes
 
