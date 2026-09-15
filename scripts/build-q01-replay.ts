@@ -65,6 +65,10 @@ const requiredBundleMarkers = [
     "portal.skynet-logistics.idx",
     "security.skynet-logistics.idx",
     "www.skynet-logistics.idx",
+    "EntityResolutionQ03ReplayQuest",
+    "Q03FilestatCommand",
+    "Q03BootlogCommand",
+    "Q03ZgrepCommand",
 ];
 
 for (const marker of requiredBundleMarkers) {

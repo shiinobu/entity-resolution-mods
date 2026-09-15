@@ -244,7 +244,6 @@ entity_resolution.q02.completed = true
 entity_resolution.q02.anomaly_found = true
 entity_resolution.q02.arka_certificate_found = true
 entity_resolution.q02.cri_hostname_found = true
-entity_resolution.q02.adrian_suspicious = true
 
 # Optional-path only:
 entity_resolution.q02.cri_hostname_found = true       (also set by mandatory path per source — see open question)
@@ -253,6 +252,22 @@ entity_resolution.q02.cri_private_ip_found = true
 # Explicitly NOT set yet:
 entity_resolution.cri_known = false   — CRI must not be unlocked as known terminology this early
 ```
+
+**Naming correction (2026-09-15):** this section originally also listed
+`entity_resolution.q02.adrian_suspicious = true`, prefixed like this file's
+other quest-scoped flags. Q03's own recovered source
+(`docs/phase13-q03-source-recovered.md`) proves this is wrong —
+`adrian_suspicious` (and its Q03 sibling `adrian_warned_player`) are
+**global, campaign-wide character-state flags**, not scoped to any single
+quest, tracking Adrian's arc (**Complicity → Responsibility**) across the
+whole campaign rather than resetting per-quest. Q02's implementation never
+actually called `flagStore.set` for this flag (a real gap, confirmed while
+recovering Q03's source), but rather than patch a FINAL LOCK quest to add a
+call under the wrong (quest-scoped) name, **Q03 owns both flags outright** —
+declared in the shared `src/content/flags.ts`, first set at Q03's report/
+reaction beat (the actual first moment Adrian starts choosing not to look
+closer). No Q02 file changes as a result. See
+`docs/phase13-q03-source-recovered.md` for the implementation.
 
 ## Transition to Q03
 

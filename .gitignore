@@ -12,3 +12,4 @@ coverage/
 /dev/replay-id.generated.ts
 /.dev-q01-replay-run
 .claude/rules/
+.claude/settings.local.json

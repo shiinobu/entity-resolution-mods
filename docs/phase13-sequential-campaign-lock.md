@@ -1,7 +1,7 @@
 # ENTITY RESOLUTION — Phase 13 Sequential Campaign Execution Lock
 
-Date: 2026-09-11 (Q01 PASS recorded 2026-09-13; Q02 PASS recorded 2026-09-14)
-Status: **LOCKED — Q01 PASS, Q02 PASS; CURRENT IMPLEMENTATION TARGET Q03**
+Date: 2026-09-11 (Q01 PASS recorded 2026-09-13; Q02 PASS recorded 2026-09-14; Q03 PASS recorded 2026-09-15)
+Status: **LOCKED — Q01 PASS, Q02 PASS, Q03 PASS; CURRENT IMPLEMENTATION TARGET Q04**
 
 ## Purpose
 
@@ -171,13 +171,58 @@ src/index.ts
 manifest.json
 ```
 
-## Current Target — Q03
+## Q03 — PASSED (2026-09-15)
 
 ```text
 Q03 — MISSING LOGS
 ```
 
-Not yet started. Feasibility is in doubt: the recovered design assumes `stat`, `journalctl`, `zgrep`, and `grep` terminal commands, none of which appear to exist in the SDK, and assumes POSIX-path file access where the SDK's `Terminal.Ls`/`Terminal.Cat` are file-ID based instead. This will need a redesign pass before implementation can begin.
+Source recovered 2026-09-14 — see `docs/phase13-q03-source-recovered.md`. Player SSHes into `edge-03.skynet-logistics.idx` (203.0.113.77, same host as Q02), browses `/var/log` for a gap in rotated log files, optionally inspects a backup archive for a hidden clue (`policy_id: CRI-07`), then reports findings to Adrian via GoMail — triggering a phone-call reaction with full A/B/C player-choice branching. Feasibility (native `ssh`, `ls`/`cat` against a declarative filesystem tree, and three custom commands — `filestat`/`bootlog`/`zgrep` (renamed from `archgrep` in a post-FINAL-LOCK naming pass) — for the pieces with no native equivalent) was confirmed 2026-09-15 via a throwaway probe mod before production implementation began.
+
+Q03 has passed its full live in-game validation gate (2026-09-15), including a substantial post-validation stabilization round and a subsequent naming/UX polish pass — see `docs/phase13-q03-source-recovered.md`'s "Live-Test Findings (Production Implementation, 2026-09-15)" for the complete list of 10 findings, the most significant being:
+
+- `Employer` (not any `Dialog` field) drives the phone-call caller identity.
+- `Dialog` must be a static class field, never reassigned at runtime.
+- `onEnd`/`onSelect` are permanently non-functional in this HackHub build — confirmed via an exhaustive elimination across every jump mechanism the SDK exposes and every JS/TS function syntax form, and externally corroborated by an independent community quest-editor tool that avoids both fields entirely. Full bug report filed: `docs/hackhub-dialog-onend-bug-report.md`. `options`/`switchBranch` branching itself works correctly once every function property is removed from the whole `Dialog` object — the source's full A/B/C branching is shipped.
+- `createDialog()` reads its entire reachable branch graph eagerly and synchronously at call-setup — confirmed via a `Proxy` experiment — so no dialog-driven "call ended" signal can ever be built from mod code; objective completion runs on a generous fixed delay from call-start instead (imprecise, but the only viable mechanism).
+- `AutoComplete` requires every non-optional objective completed via `completeObjective()`, not just the most recent one.
+- An Objective 05 false-completion bug, root-caused to `Terminal.Ls` reporting only the listed folder's own name (never child filenames) — fixed via `Files.getById().parent` folder lookup.
+
+Per the recovered campaign design source, Q04-Q16 are expected to use conditional dialogue lines (NPC text varying by already-set flags, chosen at a single `createDialog()` call) rather than Q03's real-time interactive branching — see finding 9 in `docs/phase13-q03-source-recovered.md`. Q03's `onEnd`/`onSelect` limitation is therefore not expected to block future quests.
+
+Post-FINAL-LOCK naming/UX pass (2026-09-15, session discussion — pure
+polish on top of the already-passed live validation, no gameplay-logic
+change beyond splitting one objective into two independent completions):
+the seven objectives are now `accessHost` → `checkLogs` → `checkTimestamp` /
+`reviewBootHistory` (split from a single combined objective, each
+completing independently) → `checkGatewayLogs` → `checkBackup` (optional) →
+`reportFindings`. `archgrep` (a placeholder name with no discovery path)
+was renamed to `zgrep` (confirmed live not to collide with any native
+command; native `grep`/`zgrep` cannot decompress `.gz` content at all).
+`filestat`/`bootlog`/`zgrep` output was reformatted into bordered ASCII
+tables (`println()` once per line — it does not interpret embedded `\n` as
+separate terminal lines). Live-confirmed 2026-09-15: replayed end to end
+with the new objective flow and command names/output — still passes.
+
+Current production implementation files:
+
+```text
+src/content/q03.ts
+src/content/q03-filesystem.ts
+src/content/flags.ts
+src/content/index.ts
+src/infrastructure/hackhub/q03-quest.ts
+src/infrastructure/hackhub/commands/q03-filestat.ts
+src/infrastructure/hackhub/commands/q03-bootlog.ts
+src/infrastructure/hackhub/commands/q03-zgrep.ts
+src/infrastructure/hackhub/commands/q03-log-tools.ts
+src/index.ts
+manifest.json
+```
+
+## Current Target — Q04
+
+Not yet started. Source recovery from the campaign design document (`ChatGPT-Mengenal Website HackHub-20260913-2050.md`) has not begun for Q04.
 
 ## Q01 Runtime Notes
 
