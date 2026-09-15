@@ -20,7 +20,7 @@ export const MAYA_HART: CanonicalCharacterEmail = {
 // Introduced Q07. Surname "Ward" confirmed via direct quest-card quotes in
 // the design doc's Q10/Q11/Q15/Q16 LOCKED sections ("Daniel Ward"). TODO:
 // email placeholder until Q07 is implemented.
-export const DANIEL: CanonicalCharacterEmail = {
+export const DANIEL_WARD: CanonicalCharacterEmail = {
     id: "character.daniel.ward",
     name: "Daniel Ward",
     email: "daniel.ward@phantom-net.void",
@@ -36,7 +36,7 @@ export const MARCUS_REED: CanonicalCharacterEmail = {
 // Introduced Q16. Surname "Hale" confirmed via the design doc's Q13/Q16
 // LOCKED sections ("Victor Hale's involvement", "Supporting: ... Victor
 // Hale"). TODO: email placeholder until Q16 is implemented.
-export const VICTOR: CanonicalCharacterEmail = {
+export const VICTOR_HALE: CanonicalCharacterEmail = {
     id: "character.victor.hale",
     name: "Victor Hale",
     email: "victor.hale@phantom-net.void",
@@ -78,9 +78,9 @@ export const UNKNOWN: CanonicalCharacterEmail = {
 export const CANONICAL_CHARACTER_EMAILS = {
     adrianCole: ADRIAN_COLE.email,
     mayaHart: MAYA_HART.email,
-    daniel: DANIEL.email,
+    daniel: DANIEL_WARD.email,
     marcusReed: MARCUS_REED.email,
-    victor: VICTOR.email,
+    victor: VICTOR_HALE.email,
     elenaBrooks: ELENA_BROOKS.email,
     unknown: UNKNOWN.email,
 } as const;

@@ -6,25 +6,59 @@ import {
 
 import { Q16_OBJECTIVES } from "../../content/index.js";
 
-// Direct quotes from the design doc's Q16 LOCKED FINAL v1.1 (the campaign
-// finale). `main` condenses the confrontation arc (Unknown Revealed -> Rizky
-// Question -> Maya's Assessment -> Victor's Position -> Marcus' Position ->
-// The Final Question) down to its most load-bearing exchanges — the source
-// has ~20 numbered scenes total (opening trail, historical pattern,
-// internal concern, first intervention, side effect, the mirror, A-77402
-// recontextualized, etc.) not fully reproduced here; see
-// docs/phase13-q04-q16-design-recovered.md source doc line ~36931-37710 for
-// the full scene list in a future deeper pass. Each ending branch's "Final
-// message" IS the source's exact locked closing text. switchBranch/isEnd
-// only — never onEnd/onSelect, see q03-quest.ts's Dialog field comment
-// (permanently non-functional in this HackHub build,
+// Direct quotes from the design doc's Q16 LOCKED FINAL v1.2 (the final-
+// lock-candidate revision — supersedes the "v1.1" the original dialogue-
+// extraction pass condensed from; source's own "FINAL AUDIT — Q16 THE
+// DECISION v1.1" section graded it PASS with 3 minor corrections, all
+// applied in v1.2: (1) OPS-CONCERN-1847's submitter clarified as
+// ARKA-OPS-0441 itself, (2) EXPOSE's final message changed from
+// "RELEASED" to "TRANSFERRED" — see the `expose` branch below, (3) OVERRIDE
+// explicitly grounded in "Victor's temporary emergency governance
+// authorization", not an unexplained player power — see the `override`
+// branch). `main` now covers the full confrontation arc (Unknown Revealed
+// -> Why Unknown Started -> Why They Used The Override -> What They
+// Thought They Were Doing -> Rizky Question -> SUBJECT-88172 -> The
+// Mirror -> Final Admission -> Maya's Assessment -> Victor's Position ->
+// Marcus' Position -> The Final Question), i.e. source scenes 10-23 —
+// richer than the original condensed pass. Scenes 2-9 (evidence-gathering
+// beats tied to traceArkaOps0441/compareInterventionSessions/
+// findInternalConcern/establishFirstIntervention/
+// reconstructInterventionPattern) are Relay content, not Dialog — see
+// Q16_RELAY_OPENING_CONTENT/Q16_RELAY_SECOND_CONTACT_CONTENT in
+// content/q16.ts. Each ending branch's "Final message" IS the source's
+// exact locked closing text. switchBranch/isEnd only — never
+// onEnd/onSelect, see q03-quest.ts's Dialog field comment (permanently
+// non-functional in this HackHub build,
 // docs/hackhub-dialog-onend-bug-report.md).
 const Q16_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "player", text: "ARKA-OPS-0441.", audio: "", timeout: 3000 },
         { speaker: "Unknown", text: "That's the operational reference.", audio: "", timeout: 3000 },
         { speaker: "player", text: "You used OVERRIDE_OPERATOR.", audio: "", timeout: 3000 },
-        { speaker: "Unknown", text: "Yes. The account wasn't mine. I used delegated access.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Yes.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "The account wasn't yours.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "No.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "You used delegated access.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Yes.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "It was doing what the policy allowed.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Exactly.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "And that was the problem.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Yes.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "So you used the account. Without authorization.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Yes.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "Why?", audio: "", timeout: 3000 },
+        {
+            speaker: "Unknown",
+            text: "Because waiting for another review meant more cases would pass through the same way.",
+            audio: "",
+            timeout: 3000,
+        },
+        { speaker: "player", text: "You could have stopped.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "I could have. I didn't.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "At first I was trying to stop specific cases.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Then I started trying to stop the behavior.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "And eventually?", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Eventually I stopped asking whether I was allowed to.", audio: "", timeout: 3000 },
         { speaker: "player", text: "Did you target Rizky? Did you change his score? Did you create the connection?", audio: "", timeout: 3000 },
         { speaker: "Unknown", text: "No. No. No.", audio: "", timeout: 3000 },
         { speaker: "player", text: "Then what did you do?", audio: "", timeout: 3000 },
@@ -34,10 +68,27 @@ const Q16_DIALOG: QuestDialogDefinition = {
             audio: "",
             timeout: 3000,
         },
+        { speaker: "player", text: "What do you know about SUBJECT-88172?", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "Enough to know it existed outside CRI.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "Is it dangerous?", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "I don't know.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "Then why did you keep treating it as suspicious?", audio: "", timeout: 3000 },
+        {
+            speaker: "Unknown",
+            text: "Because I saw the same relationship pattern repeating. That's not evidence. It wasn't.",
+            audio: "",
+            timeout: 3000,
+        },
         { speaker: "player", text: "You said association wasn't enough. But you used it.", audio: "", timeout: 3000 },
         { speaker: "Unknown", text: "Because I thought the system was wrong.", audio: "", timeout: 3000 },
         { speaker: "player", text: "And that made you right?", audio: "", timeout: 3000 },
         { speaker: "Unknown", text: "No.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "Were you trying to fix CRI?", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "At first.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "And later?", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "I was trying to make it behave the way I thought it should.", audio: "", timeout: 3000 },
+        { speaker: "player", text: "You became another person deciding what the system should do.", audio: "", timeout: 3000 },
+        { speaker: "Unknown", text: "I know. When I couldn't tell anymore which changes were mine.", audio: "", timeout: 3000 },
         {
             speaker: "Maya",
             text: "We can prove the policy changed. We can prove the operator intervened. We can prove the concern was raised and closed.",
@@ -67,6 +118,9 @@ const Q16_DIALOG: QuestDialogDefinition = {
             ],
         },
     ],
+    // v1.2 correction: uses "the temporary emergency governance
+    // authorization" (Victor's grant, obtainGovernanceAuthorization) —
+    // not an unexplained player power.
     destroy: [
         {
             speaker: "system",
@@ -75,14 +129,21 @@ const Q16_DIALOG: QuestDialogDefinition = {
             switchBranch: "finalUnknownScene",
         },
     ],
+    // v1.2 correction: final message changed from "RELEASED" to
+    // "TRANSFERRED" (the player verifies and hands the package to Maya,
+    // who becomes responsible for public disclosure — not the player
+    // unilaterally releasing it).
     expose: [
         {
             speaker: "system",
-            text: "EVIDENCE PACKAGE — RELEASED — PUBLIC INVESTIGATION: INITIATED",
+            text: "EVIDENCE PACKAGE — TRANSFERRED — PUBLIC INVESTIGATION: INITIATED",
             audio: "",
             switchBranch: "finalUnknownScene",
         },
     ],
+    // v1.2 correction: explicitly "uses Victor's temporary emergency
+    // governance authorization" — not permanent ownership; the
+    // authorization itself is recorded and subject to later review.
     override: [
         {
             speaker: "system",
