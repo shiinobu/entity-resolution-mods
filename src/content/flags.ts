@@ -2,9 +2,9 @@
 // quest (unlike e.g. Q02_FINAL_STATE_FLAG). Q03's recovered source proves
 // `adrian_suspicious` and `adrian_warned_player` track Adrian's arc
 // (Complicity → Responsibility) across the whole campaign, not a single
-// quest's persistent state. First written by Q03 (see docs/phase13-q03-
-// source-recovered.md and docs/source-current.md's "Naming
-// correction" note) — later quests may read or extend them.
+// quest's persistent state. First written by Q03 — see docs/source-current.md's
+// Q02/Q03 "Changes from original source" tables for why these ended up
+// global instead of quest-scoped — later quests may read or extend them.
 export const ENTITY_RESOLUTION_FLAGS = {
     adrianSuspicious: "entity_resolution.adrian_suspicious",
     adrianWarnedPlayer: "entity_resolution.adrian_warned_player",

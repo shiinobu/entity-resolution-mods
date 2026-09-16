@@ -13,10 +13,6 @@ import {
     Q01_OBJECTIVES,
     Q01_OBJECTIVE_IDS,
     Q01_OPEN_PORTS,
-    Q01_RECON_INPUT,
-    Q01_RECON_INPUT_VARIANTS,
-    Q01_RECON_PROFILE,
-    Q01_RECON_RESULT,
     Q01_REPORT_BODY,
     Q01_REPORT_BODY_TEMPLATE,
     Q01_REPORT_RECIPIENT,
@@ -84,43 +80,9 @@ describe("Q01 — THE CONTRACT (FINAL LOCK, live-in-game passed)", () => {
         );
     });
 
-    it("defines the reusable recon input variants and deterministic Q01 profile", () => {
+    it("defines the Lynx recon input values", () => {
         assert.equal(Q01_LYNX_INPUT_IP, "203.0.113.42");
         assert.equal(Q01_LYNX_INPUT_URL, "https://203.0.113.42/");
-        assert.equal(Q01_RECON_INPUT, "-d https://www.skynet-logistics.idx/");
-        assert.deepEqual(Q01_RECON_INPUT_VARIANTS, [
-            "-d https://www.skynet-logistics.idx/",
-            "-d skynet-logistics.idx",
-            "-d www.skynet-logistics.idx",
-            "-d https://skynet-logistics.idx",
-            "-d https://skynet-logistics.idx/",
-            "-d https://www.skynet-logistics.idx",
-            "skynet-logistics.idx",
-            "www.skynet-logistics.idx",
-            "https://skynet-logistics.idx",
-            "https://www.skynet-logistics.idx",
-            "https://skynet-logistics.idx/",
-            "https://www.skynet-logistics.idx/",
-        ]);
-        assert.equal(
-            Q01_RECON_RESULT,
-            "portal.skynet-logistics.idx\nsecurity.skynet-logistics.idx\nstatus.skynet-logistics.idx\nwww.skynet-logistics.idx",
-        );
-        assert.equal(Q01_RECON_PROFILE.id, "q01");
-        assert.deepEqual(Q01_RECON_PROFILE.resultHosts, [
-            "portal.skynet-logistics.idx",
-            "security.skynet-logistics.idx",
-            "status.skynet-logistics.idx",
-            "www.skynet-logistics.idx",
-        ]);
-        assert.equal(Q01_RECON_PROFILE.sources.length, 5);
-        assert.equal(
-            Q01_RECON_PROFILE.sources.reduce(
-                (total, source) => total + source.candidates.length,
-                0,
-            ),
-            8,
-        );
     });
 
     it("keeps the Lynx address as one runtime list entry and resets stale fixtures before registration", () => {

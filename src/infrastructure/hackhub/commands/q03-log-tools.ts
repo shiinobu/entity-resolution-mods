@@ -2,8 +2,7 @@
 // (filestat, bootlog, zgrep) plus the report-template validation in
 // q03-quest.ts. Deliberately free of any
 // @hotbunny/hackhub-content-sdk import so this module is testable under
-// plain `tsx --test` with no game runtime — see
-// tests/phase13-q03-log-tools.test.ts.
+// plain `tsx --test` with no game runtime — see tests/q03.test.ts.
 
 // Greedy word-wrap: breaks on spaces, only hard-breaking a single word that
 // alone exceeds maxWidth (should not happen for Q03's own fixture data, but

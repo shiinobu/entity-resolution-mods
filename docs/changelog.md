@@ -111,3 +111,30 @@ for unbuilt quests).
   `docs/source-original.md`, `docs/source-current.md`, `docs/bugs.md`,
   `docs/implementation-notes.md`, and this changelog — full superseded files
   deleted outright rather than kept as dead weight.
+- The three surviving reference docs renamed off their old prefixes:
+  `phase13-quest-structure-standard.md` → `docs/implementation-rules.md`,
+  `hacking-tools-reference.md` → `docs/mechanics-reference.md`,
+  `email-character-contract.md` → `docs/email-rules.md`.
+  `implementation-rules.md` §1/2/7/8 rewritten where they still described
+  the removed dev/replay-file system.
+- `docs/source-current.md`'s Q03 section had gone stale — it predated the
+  credential-delivery redesign earlier this same day and was missing the
+  `findAccess` objective, the mail-attachment mechanism, and the new SSH
+  password entirely. Fixed by cross-checking directly against
+  `src/content/q03.ts`.
+- **`docs/changelog.md` promoted to a mandatory timeline**: every real
+  change (bug, mechanic, email rule, docs, milestone) now needs a dated
+  entry here, not just quest-PASS milestones — format defined at the top
+  of this file, effective for entries from 2026-09-18 onward.
+- **Dead code removed**: `src/domain/recon/`, `src/domain/packet/`, and
+  the unused `Q01_RECON_INPUT*`/`Q01_RECON_RESULT`/`Q01_SUBFINDER_RESULT`/
+  `Q01_RECON_PROFILE` constants in `content/q01.ts` (leftover from Q01's
+  pre-`dirhunter` DSS-recon design; confirmed dead against both a
+  repo-wide usage grep and the original Phase 9 SDK design document,
+  which never mentions "recon" or "packet" at all). `tests/q01.test.ts`
+  updated to drop the test coverage that existed only for these dead
+  constants. Typecheck and `npm run test:all` (230/230) both clean
+  afterward. Two stale doc-reference comments also fixed in
+  `src/content/flags.ts` and `src/infrastructure/hackhub/commands/q03-log-tools.ts`
+  that survived the earlier doc-reorg `sed` passes (one split across two
+  comment lines, one pointing at an already-consolidated test file).

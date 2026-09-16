@@ -2,7 +2,6 @@ import type { QuestHackhubPostDefinition } from "@hotbunny/hackhub-content-sdk";
 
 import { asId } from "../core/index.js";
 import { flagEquals } from "../domain/shared/index.js";
-import type { ReconProfile } from "../domain/recon/index.js";
 import type { Quest } from "../domain/quest/index.js";
 import { ADRIAN_COLE } from "./characters.js";
 
@@ -65,87 +64,6 @@ export const Q01_NETWORK_PORTS = [
     { external: 80, internal: 80, active: false, service: "http" },
     { external: 443, internal: 443, active: true, service: "https" },
 ];
-
-// The player may provide the same reconnaissance target in normal value forms.
-// Formatting (scheme, www prefix, trailing slash) is not a gameplay constraint.
-export const Q01_RECON_INPUT = `-d ${Q01_WEB_HOME_URL}`;
-export const Q01_RECON_INPUT_VARIANTS = [
-    Q01_RECON_INPUT,
-    `-d ${Q01_WEB_HOST}`,
-    `-d ${Q01_WEB_HOME_HOST}`,
-    `-d https://${Q01_WEB_HOST}`,
-    `-d https://${Q01_WEB_HOST}/`,
-    `-d https://${Q01_WEB_HOME_HOST}`,
-    Q01_WEB_HOST,
-    Q01_WEB_HOME_HOST,
-    `https://${Q01_WEB_HOST}`,
-    `https://${Q01_WEB_HOME_HOST}`,
-    `https://${Q01_WEB_HOST}/`,
-    Q01_WEB_HOME_URL,
-] as const;
-
-export const Q01_RECON_RESULT = [
-    "portal.skynet-logistics.idx",
-    "security.skynet-logistics.idx",
-    "status.skynet-logistics.idx",
-    "www.skynet-logistics.idx",
-].join("\n");
-
-// Q01's dedicated `subfinders` terminal command renders the same deterministic
-// subdomain list as the shared DSS recon profile above.
-export const Q01_SUBFINDER_RESULT = Q01_RECON_RESULT;
-
-export const Q01_RECON_PROFILE: ReconProfile = {
-    id: "q01",
-    targets: [Q01_WEB_HOST, Q01_WEB_HOME_HOST],
-    sources: [
-        {
-            id: "certificate-index",
-            name: "cert-index",
-            description: "certificate index",
-            candidates: [
-                Q01_WEB_HOME_HOST,
-                `security.${Q01_WEB_HOST}`,
-            ],
-        },
-        {
-            id: "passive-dns",
-            name: "passive-dns",
-            description: "passive DNS",
-            candidates: [
-                `security.${Q01_WEB_HOST}`,
-                `portal.${Q01_WEB_HOST}`,
-            ],
-        },
-        {
-            id: "host-intel",
-            name: "host-intel",
-            description: "host intelligence",
-            candidates: [
-                `status.${Q01_WEB_HOST}`,
-                Q01_WEB_HOME_HOST,
-            ],
-        },
-        {
-            id: "threat-feed",
-            name: "threat-feed",
-            description: "threat feed index",
-            candidates: [`status.${Q01_WEB_HOST}`],
-        },
-        {
-            id: "web-index",
-            name: "web-index",
-            description: "indexed web hosts",
-            candidates: [`portal.${Q01_WEB_HOST}`],
-        },
-    ],
-    resultHosts: [
-        `portal.${Q01_WEB_HOST}`,
-        `security.${Q01_WEB_HOST}`,
-        `status.${Q01_WEB_HOST}`,
-        Q01_WEB_HOME_HOST,
-    ],
-};
 
 export const Q01_ADRIAN_EMAIL = ADRIAN_COLE.email;
 export const Q01_REPORT_RECIPIENT = Q01_ADRIAN_EMAIL;
