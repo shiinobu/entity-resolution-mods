@@ -1,6 +1,6 @@
 // Fixture data for Q06's classification database. Facts (Rizky's record,
 // model version, schema names) are sourced from
-// docs/phase13-q04-q16-design-recovered.md; the manifest FILE this is
+// docs/source-current.md; the manifest FILE this is
 // wrapped in (`classification_snapshot.db`, discoverable via `ls`/`cat` the
 // same way Q03's backup archives were) is this project's own naming choice —
 // the source never gives a literal filename, only the schema/content facts.

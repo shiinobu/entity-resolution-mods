@@ -10,7 +10,7 @@ import { Q10_OBJECTIVES } from "../../content/index.js";
 // scene (Daniel walks the player through the provenance gap). Trigger point
 // still TODO. switchBranch/isEnd only — never onEnd/onSelect, see
 // q03-quest.ts's Dialog field comment (permanently non-functional in this
-// HackHub build, docs/hackhub-dialog-onend-bug-report.md).
+// HackHub build, docs/bugs.md (entry 1)).
 const Q10_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "player", text: "Could the match have been changed?", audio: "", timeout: 3000 },
@@ -68,7 +68,7 @@ export class EntityResolutionQ10Quest extends HackHubQuest<Q10QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-q04-q16-design-recovered.md.
+        // TODO: implement — see docs/source-current.md.
     }
 
     override OnObjectivesStart() {

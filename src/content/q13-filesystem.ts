@@ -1,6 +1,6 @@
 // Fixture data for Q13's operational audit trail. Facts (OVERRIDE_OPERATOR
 // account, session A-77402, origin IP, dates) sourced from
-// docs/phase13-q04-q16-design-recovered.md. Filenames are this project's own
+// docs/source-current.md. Filenames are this project's own
 // naming choice.
 
 import type { NetworkFileMap } from "@hotbunny/hackhub-content-sdk";

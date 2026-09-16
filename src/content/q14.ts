@@ -1,9 +1,8 @@
 // REBUILT from the authoritative locked source `DEAD_SIGNAL_Q14_THE_OWNER_
 // LOCKED_v1.0.docx` (user-supplied 2026-09-16), which supersedes the
 // Phase 8 "COMPLETE TECHNICAL QUEST SPEC" summary this skeleton was
-// originally built from — Phase 13's own dev transcript
-// (`ChatGPT-Mulai Audit Story Phase 13-...md`) confirms Q14/Q15 are the
-// only two quests in the campaign that ever received a dedicated LOCKED
+// originally built from — Phase 13's own dev transcript confirms Q14/Q15
+// are the only two quests in the campaign that ever received a dedicated LOCKED
 // v1.0 spec; every other quest (Q01-Q13, Q16) still relies on the terser
 // Phase 8 summary. Mail/Dialogue content NOT YET WRITTEN beyond what's
 // below — HackhubPost and network fixtures still TODO.
@@ -165,7 +164,7 @@ export const Q14_MARCUS_EMAIL_CONTENT = [
 // distinct private-messaging system in the source's story bible, separate
 // from the phone-call `Dialog` mechanic — no native Relay SDK primitive
 // exists, so per this project's Q01 precedent (Relay -> Mail substitution,
-// see docs/phase13-sequential-campaign-lock.md "Q01 Runtime Notes") this
+// see docs/implementation-rules.md §0 (Relay -> Mail substitution)) this
 // is Mail-adjacent content.
 export const Q14_RELAY_OPENING_CONTENT = [
     'Daniel: "I found another reference."',

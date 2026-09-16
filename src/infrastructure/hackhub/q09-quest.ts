@@ -11,7 +11,7 @@ import { Q09_OBJECTIVES } from "../../content/index.js";
 // sequential flow (the source doesn't specify exact SDK trigger points; real
 // wiring is still TODO in OnObjectivesStart). switchBranch/isEnd only —
 // never onEnd/onSelect, see q03-quest.ts's Dialog field comment (permanently
-// non-functional in this HackHub build, docs/hackhub-dialog-onend-bug-report.md).
+// non-functional in this HackHub build, docs/bugs.md (entry 1)).
 const Q09_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "player", text: "Who cleared it?", audio: "", timeout: 3000 },
@@ -61,7 +61,7 @@ export class EntityResolutionQ09Quest extends HackHubQuest<Q09QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-q04-q16-design-recovered.md.
+        // TODO: implement — see docs/source-current.md.
     }
 
     override OnObjectivesStart() {

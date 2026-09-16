@@ -1,6 +1,6 @@
 // Fixture data for Q12's POL-1847 policy history. Facts (policy id, legacy
 // vs current field values, deployment date) sourced from
-// docs/phase13-q04-q16-design-recovered.md. Filenames are this project's own
+// docs/source-current.md. Filenames are this project's own
 // naming choice (source describes content, not literal file paths).
 
 import type { NetworkFileMap } from "@hotbunny/hackhub-content-sdk";

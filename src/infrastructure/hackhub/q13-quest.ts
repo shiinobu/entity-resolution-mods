@@ -11,10 +11,10 @@ import { Q13_OBJECTIVES } from "../../content/index.js";
 // scene (matches the quest's closing beat). The source also has separate
 // "Adrian Contribution" (via Relay) and "Final Evidence"/"Maya
 // Cross-Reference" scenes not included here — see
-// docs/phase13-q04-q16-design-recovered.md source doc line ~26800-27130 for
+// docs/source-current.md source doc line ~26800-27130 for
 // a future deeper pass. switchBranch/isEnd only — never onEnd/onSelect, see
 // q03-quest.ts's Dialog field comment (permanently non-functional in this
-// HackHub build, docs/hackhub-dialog-onend-bug-report.md).
+// HackHub build, docs/bugs.md (entry 1)).
 const Q13_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "Daniel", text: "ARKA network.", audio: "", timeout: 3000 },
@@ -69,7 +69,7 @@ export class EntityResolutionQ13Quest extends HackHubQuest<Q13QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-q04-q16-design-recovered.md.
+        // TODO: implement — see docs/source-current.md.
     }
 
     override OnObjectivesStart() {

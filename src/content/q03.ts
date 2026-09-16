@@ -16,7 +16,7 @@ export {
 
 // Q03 targets the SAME host Q02 already fully investigated and resolved —
 // not a new hidden target. The opening mail states the hostname/IP directly
-// (no re-resolve puzzle); see docs/phase13-q03-source-recovered.md's
+// (no re-resolve puzzle); see docs/source-current.md's
 // "Canonical Identity" ("Target: edge-03.skynet-logistics.idx — the same
 // host Q02 already investigated").
 export const Q03_CLIENT_NAME = Q02_CLIENT_NAME;
@@ -67,7 +67,7 @@ export const Q03_ACCESS_ATTACHMENT_EXTENSION = "bak";
 export const Q03_ACCESS_HASH =
     "1b4fc73dbe8fd970afadc3731b0626752cf425944616b528f12234b923e0d5d4";
 
-// Same protocol-gating rule as Q02 (docs/phase13-quest-structure-standard.md
+// Same protocol-gating rule as Q02 (docs/implementation-rules.md
 // §6): port 80 stays absent so it defaults CLOSE. This matters here because
 // Q03 re-creates the same host/IP Q02EdgeWebsite (untouched, locked) still
 // serves — an absent port keeps that page's existing HTTP/HTTPS gating
@@ -129,7 +129,7 @@ export const Q03_REPORT_TEMPLATE_CONTENT = [
     "archived logs from the infrastructure owner.",
 ].join("\n");
 
-// Exact locked wording from docs/phase13-q03-source-recovered.md's
+// Exact locked wording from docs/source-current.md's
 // "05 — Report findings" section, reproduced verbatim (no {{fields}} — the
 // freehand path is an exact-match body, matching Q02_REPORT_BODY's role).
 export const Q03_REPORT_BODY = [
@@ -236,7 +236,7 @@ export const Q03_BACKUP_RESTRICTED_FLAG = "entity_resolution.q03.backup_restrict
 export const Q03_CRI_POLICY_FOUND_FLAG = "entity_resolution.q03.cri_policy_found";
 
 // RENAMED 2026-09-15 (post-FINAL-LOCK design pass — see
-// docs/phase13-q03-source-recovered.md's "Live-Test Findings" for the
+// docs/source-current.md's "Live-Test Findings" for the
 // live-testing that led to this quest actually working; this pass is pure
 // naming/UX polish on top of that). `determineActivity` (one objective
 // requiring BOTH `filestat` and `bootlog`) was split into two separate
@@ -298,7 +298,7 @@ export const Q03_OBJECTIVES = [
         description: "Check the gateway logs",
         unlocksAfter: [Q03_OBJECTIVE_IDS.checkTimestamp, Q03_OBJECTIVE_IDS.reviewBootHistory],
     },
-    // Optional, visible (per docs/phase13-quest-structure-standard.md §7 —
+    // Optional, visible (per docs/implementation-rules.md §7 —
     // `hidden: true` was live-tested on Q02 and did not surface reliably).
     // Placed after checkGatewayLogs since the backup gap is the same one;
     // not required for reportFindings to unlock.

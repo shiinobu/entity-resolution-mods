@@ -1,4 +1,4 @@
-// SKELETON — see docs/phase13-q04-q16-design-recovered.md. Mail, dialogue,
+// SKELETON — see docs/source-current.md. Mail, dialogue,
 // HackhubPost, network fixtures NOT YET WRITTEN.
 
 import { asId } from "../core/index.js";

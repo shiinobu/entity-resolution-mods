@@ -1,4 +1,4 @@
-// SKELETON — see docs/phase13-q04-q16-design-recovered.md. Mail, dialogue,
+// SKELETON — see docs/source-current.md. Mail, dialogue,
 // HackhubPost, network fixtures NOT YET WRITTEN.
 
 import { asId } from "../core/index.js";
@@ -82,7 +82,7 @@ export const Q13_OPERATOR_IDENTITY_UNKNOWN_FLAG = "entity_resolution.q13.operato
 // from the phone-call `Dialog` mechanic Q03 uses for the separate "Phone"
 // system. No native Relay SDK primitive exists, so per this project's Q01
 // precedent (Relay -> Mail substitution, see
-// docs/phase13-sequential-campaign-lock.md "Q01 Runtime Notes"), this is
+// docs/implementation-rules.md §0 (Relay -> Mail substitution)), this is
 // Mail-adjacent content, not Dialog territory. Sourced verbatim (only one
 // draft pass found in this quest's range, no contradiction to resolve).
 // TODO: exact delivery mechanism (one Mail.send per line vs. a single

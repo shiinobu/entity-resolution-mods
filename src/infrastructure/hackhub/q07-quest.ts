@@ -35,7 +35,7 @@ export class EntityResolutionQ07Quest extends HackHubQuest<Q07QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-q04-q16-design-recovered.md.
+        // TODO: implement — see docs/source-current.md.
     }
 
     override OnObjectivesStart() {

@@ -146,7 +146,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         Network.registerDomain(Q02_WEB_HOST, this.Data.targetIp);
         // Q02_GATEWAY_IP is a raw IP used directly as a Website host — it is
         // not a hostname resolving to another IP, so no Network.registerDomain
-        // mapping applies here (experimental; see docs/phase13-q02-source-recovered.md).
+        // mapping applies here (experimental; see docs/source-current.md).
 
         // The hidden SAN hostname resolves too, so Q02CriGatewayHostnameWebsite
         // can serve its connection-timeout page — separate from (and unrelated

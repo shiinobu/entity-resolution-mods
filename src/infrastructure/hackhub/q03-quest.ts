@@ -94,7 +94,7 @@ const includesArgMatching = (args: readonly string[], needle: string): boolean =
 
 // EXPERIMENT 2026-09-15: every direct function property on a `Dialog` entry
 // (5 syntactic forms tried, all identical failure — see
-// docs/hackhub-dialog-onend-bug-report.md) stalls the transition into that
+// docs/bugs.md (entry 1)) stalls the transition into that
 // entry, with no exception found. This wraps a fully plain (function-free)
 // `Dialog` object in a `Proxy` instead, so the SDK never sees a function
 // value anywhere inside the data it reads — the side effect fires from
@@ -223,7 +223,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
     // registration, before any runtime assignment can take effect.
     //
     // FINAL FINDING (2026-09-15, exhaustively tested — see
-    // docs/hackhub-dialog-onend-bug-report.md): `onEnd` (on a speech line)
+    // docs/bugs.md (entry 1)): `onEnd` (on a speech line)
     // and `onSelect` (on an option) NEVER fire, under any circumstance.
     // Confirmed across every jump mechanism the SDK exposes (mid-call
     // `onEnd`+`createDialog()`, `switchBranch`, `nextIndex`, `onSelect`
@@ -401,7 +401,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         gameRuntime.quest.start(Q03_MISSING_LOGS);
 
         // ROOT CAUSE FOUND 2026-09-15 (after extensive live-test isolation —
-        // see docs/phase13-q03-source-recovered.md's "Live-Test Findings"):
+        // see docs/source-current.md's "Live-Test Findings"):
         // `await`ing ANYTHING (even `Network.destroyNetwork`) before calling
         // `Network.createSubnetNetwork` makes the engine lose track of which
         // mod is calling across the async boundary — the create call then
@@ -530,7 +530,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         gameRuntime.flagStore.set(Q03_CRI_POLICY_FOUND_FLAG, this.Data.backupChecked);
         // Global, campaign-wide flags (see src/content/flags.ts) — first set
         // here, not per Q02's own persistent state, per the naming
-        // correction recorded in docs/phase13-q02-source-recovered.md.
+        // correction recorded in docs/source-current.md.
         gameRuntime.flagStore.set(ENTITY_RESOLUTION_FLAGS.adrianSuspicious, true);
         gameRuntime.flagStore.set(ENTITY_RESOLUTION_FLAGS.adrianWarnedPlayer, true);
 
@@ -714,7 +714,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         // against a confirmed successful read. `Terminal.Cat` (handled in
         // handleTerminalCat below) only fires with real file data, so it's
         // the sole source of truth here — matches the same reasoning
-        // finding 6 in docs/phase13-q03-source-recovered.md already
+        // finding 6 in docs/source-current.md already
         // established for reading remote files inside custom commands.
         // `ls` is handled the same way — solely via handleTerminalLs
         // (Terminal.Ls), not by matching the raw typed path here.

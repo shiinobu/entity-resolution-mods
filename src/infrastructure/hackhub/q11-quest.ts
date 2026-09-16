@@ -10,10 +10,10 @@ import { Q11_OBJECTIVES } from "../../content/index.js";
 // Dialogue" + "Ending" scenes (Daniel's confession, questioned directly —
 // matches the checkTheChange optional objective). The source also has a
 // separate short "Maya + Daniel" confrontation scene not included here (see
-// docs/phase13-q04-q16-design-recovered.md source doc line ~21731) — left
+// docs/source-current.md source doc line ~21731) — left
 // for a future deeper pass. switchBranch/isEnd only — never onEnd/onSelect,
 // see q03-quest.ts's Dialog field comment (permanently non-functional in
-// this HackHub build, docs/hackhub-dialog-onend-bug-report.md).
+// this HackHub build, docs/bugs.md (entry 1)).
 const Q11_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "player", text: "When did this change?", audio: "", timeout: 3000 },
@@ -79,7 +79,7 @@ export class EntityResolutionQ11Quest extends HackHubQuest<Q11QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-q04-q16-design-recovered.md.
+        // TODO: implement — see docs/source-current.md.
     }
 
     override OnObjectivesStart() {

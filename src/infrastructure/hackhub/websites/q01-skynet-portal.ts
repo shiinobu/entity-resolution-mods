@@ -45,7 +45,7 @@ const page = (
 
 // Experimental path-based redesign: one public host, several pages
 // discovered by path (dirhunter-style) instead of separate subdomains.
-// Not yet locked — see docs/phase13-q01-final-lock.md.
+// Not yet locked — see docs/source-current.md.
 @RegisterWebsite
 export class Q01SkynetLogisticsWebsite extends Website {
     SiteName = Q01_CLIENT_NAME;

@@ -3,21 +3,23 @@
 Date: 2026-09-14
 Status: **LOCKED** — this is the mandatory structural pattern for every quest from Q03 through Q16. It must not change without the user's explicit request, regardless of how any individual quest's story content differs.
 
-This standard was derived from Q01 and Q02's full implementation, live-validation, and post-PASS stabilization cycles. Every rule below exists because of a concrete bug or live-test finding — see `docs/phase13-q01-final-lock.md` and `docs/phase13-q02-source-recovered.md` for the incidents that produced them.
+This standard was derived from Q01 and Q02's full implementation, live-validation, and post-PASS stabilization cycles. Every rule below exists because of a concrete bug or live-test finding — see `docs/source-current.md` (design/implementation facts) and `docs/bugs.md` (the incidents themselves) for the source material.
+
+## 0. Relay → Mail substitution
+
+The source design's "Relay" private-messaging system (distinct from the phone-call `Dialog` mechanic and the public `Pulse`/`Twotter` feed) has no native HackHub SDK equivalent — only `Mail` exists. Every quest that needs "Relay" content (first used for Adrian's short post-report response in Q01) implements it through the existing Mail channel. Treat this as an adapter detail, not a new story-system contract — do not build a second messaging primitive.
 
 ## 1. File split: `content/` declares, quest files call
 
 - `src/content/qNN.ts` holds every piece of **data** a quest needs: target IPs/hosts, objective IDs, the `Objectives` array, nmap/lynx fixture results, network port lists, reward numbers, report subjects/bodies/templates, delay constants (`setTimeout` durations), template IDs/labels, and the `HackhubPost` feed-post definition (content text + author). `HackhubPost` was missed on the first pass for both Q01 and Q02 — it stayed as an inline object literal in the quest files until caught and corrected on 2026-09-14 — so treat it as content exactly like mail bodies, not as behavior.
-- `src/infrastructure/hackhub/qNN-quest.ts` (production) and `dev/qNN-replay-quest.ts` (replay) only **import and use** those declarations. No local `const` literal arrays/objects duplicating content that content/ already owns.
-- Exception: small **helper functions** (fixture registration, host normalization, `sendAdrianMail`-style wrappers, event handlers) stay in the quest files — they are behavior, not content, even though production and replay each define their own copy.
+- `src/infrastructure/hackhub/qNN-quest.ts` is the **only** quest file — it only **imports and uses** those declarations. No local `const` literal arrays/objects duplicating content that `content/` already owns. (Historical: this used to be two files, production + a separate `dev/qNN-replay-quest.ts`; the whole dev-replay-file system was removed and replaced by the single `isDev` flag — see §7.)
+- Exception: small **helper functions** (fixture registration, host normalization, `sendAdrianMail`-style wrappers, event handlers) stay in the quest file — they are behavior, not content.
 
-## 2. Content that genuinely differs between production and replay
+## 2. Content is a single value — never forked by `isDev`
 
-When text must legitimately differ (production mentions a real money reward, replay says "DEV replay complete."; production's incoming mail is the full narrative, replay's is a terse test fixture) — define **both** as separately named exports in `content/qNN.ts`, suffixed `_PRODUCTION` / `_REPLAY`. Never fall back to a bare local literal in the quest file to sidestep this — that was the exact mistake corrected for `Q01_COMPLETION_MAIL_CONTENT` / `Q02_COMPLETION_MAIL_CONTENT` post-PASS.
+Unlike the old (removed) production/replay-file split, `isDev` gates exactly three things (see §7) and nothing else. Mail bodies, `HackhubPost` text, delay/timer constants, and report subjects are each a **single** value in `content/qNN.ts` — never a `_PRODUCTION`/`_REPLAY` pair. Whether `isDev` is `true` or `false`, the player sees the same narrative content; only the dependency gate, objective unlock order, and reward-granting differ.
 
-If an `Objectives` array's wording is fully identical between production and replay, export ONE shared `QNN_OBJECTIVES` array (`Q02_OBJECTIVES` pattern). If even one hint differs, keep `Objectives` local per file rather than forcing a fake shared array with overrides.
-
-**`HackhubPost` text**: a short teaser that points to the mail for details ("Short audit for a client in Jakarta. Details in your mail.") — never a near-duplicate summary of the incoming mail's body (Q01's original text was corrected away from this on 2026-09-14). Production and replay always differ here (replay is explicitly marked "DEV REPLAY..." with an `"Adrian Cole [DEV]"` author), so both get `QNN_HACKHUB_POST_PRODUCTION` / `_REPLAY` exports per the `_PRODUCTION`/`_REPLAY` rule above.
+**`HackhubPost` text**: a short teaser that points to the mail for details ("Short audit for a client in Jakarta. Details in your mail.") — never a near-duplicate summary of the incoming mail's body (Q01's original text was corrected away from this on 2026-09-14).
 
 **Mail subject threading**: the opening mail's subject and the eventual report's subject may either (a) be the same subject reused throughout the whole thread (brief → report → completion reply, all one `Re:`-chained thread), or (b) be two deliberately separate subjects (a casual opening subject, a distinct formal report subject). Q01 uses (a); Q02 uses (b). Q01's pattern is kept as a historical exception (FINAL LOCK, already live-proven — not worth reopening for stylistic consistency); **Q02's pattern (b) is the standard for Q03-Q16**: the opening mail reads as a casual ping, the report gets its own professional subject as a distinct deliverable.
 
@@ -89,7 +91,7 @@ Do not reintroduce a second delay stage (e.g. a separate delay before the hold m
 Every `Website`'s HTTP behavior is dictated strictly by port 80's status in that target's own `NMAP_RESULT`-equivalent fixture, no exceptions:
 
 - **Port 80 `OPEN`** → plain `http://` is allowed; serve the real page content over HTTP too (no gating needed).
-- **Port 80 `CLOSE`, or absent from the fixture entirely** → `http://` **must** return a "400 Bad Request" page; only `https://` may serve real content. An unlisted port defaults to `CLOSE` — locked 2026-09-14 after `Q02EdgeWebsite` was found still serving identical content on both protocols despite its target's `NMAP_RESULT` never listing port 80 (fixed the same day; see `docs/phase13-q02-source-recovered.md` item 8's sibling fix in that file's history).
+- **Port 80 `CLOSE`, or absent from the fixture entirely** → `http://` **must** return a "400 Bad Request" page; only `https://` may serve real content. An unlisted port defaults to `CLOSE` — locked 2026-09-14 after `Q02EdgeWebsite` was found still serving identical content on both protocols despite its target's `NMAP_RESULT` never listing port 80 (fixed the same day; see `docs/bugs.md` entry 12).
 
 For the CLOSE/absent case, gate the page with a `DynamicWebsitePageDefinition` instead of a static one:
 
@@ -107,20 +109,37 @@ const page = (path, html, title, description): DynamicWebsitePageDefinition => (
 
 `context.url` is evaluated **mod-side** (not inside the page's sandboxed iframe), so this reliably distinguishes `http://` from `https://` — a client-side script inside the page itself cannot be trusted to see the real requested protocol. The HTTP-rejected response reproduces nginx's real "400 Bad Request — The plain HTTP request was sent to HTTPS port" text for authenticity.
 
-## 7. Replay quest conventions
+## 7. `isDev` — the dev/prod flag (replaces the old dual-file replay system)
 
-- No `QuestsToComplete` gate — replay quests start independently so each can be tested without replaying the whole chain. Production keeps the real dependency.
-- `Rewards = { money: 0, xp: 0 }` always — replay never grants real rewards; the native `Rewards` field is bypassed entirely in favor of `gameRuntime.reward.claim`/`Bank.transaction`, called only from production's `OnComplete`.
-- Own `Title`, `HackhubPost`, `Name` (the latter suffixed with a per-build replay ID) — always visibly marked "DEV REPLAY" so it can never be confused with the real quest in-game.
-- Mirror every production quest-logic change into the replay file in the same pass — they must stay behaviorally identical except for the deliberate content divergences covered in §2.
-- **Optional: unlocksAfter-free replay display variant.** When faster manual QA is wanted (so a tester isn't forced through the objective order just to reach the one they're testing), define `QNN_REPLAY_OBJECTIVES` in `content/qNN.ts` as `QNN_OBJECTIVES.map(({ unlocksAfter: _unlocksAfter, ...objective }) => objective)`, and point only the replay file's `Objectives` at it (`dev/qNN-replay-quest.ts`); production always keeps the real gated `QNN_OBJECTIVES`. This strips only the visual unlock-order gate — it must never relax any internal `Data`-flag gating (e.g. a handler that checks `this.Data.serviceIdentified` before allowing certificate inspection stays exactly as strict). Piloted and confirmed live on Q02, then explicitly rolled back from Q02 once Q02 reached FINAL LOCK on 2026-09-14 (a locked quest has no more need for a QA shortcut) — the pattern itself remains standard and available starting Q03.
+**Superseded 2026-09-17.** Q01–Q03 used to ship a second, hand-maintained `dev/qNN-replay-quest.ts` file per quest (separate quest class, separate build target, "DEV REPLAY" title). That whole system — the `dev/` folder, `scripts/build-*-replay.ts`, the `npm run build:replay:qNN` scripts — was deleted and replaced by a single boolean:
+
+```ts
+// src/content/dev-flag.ts
+export const isDev = true; // flip to false for a real production/full-chapter run
+export function applyDevGating(objectives) { /* strips unlocksAfter when isDev */ }
+```
+
+Every quest's production file (`src/infrastructure/hackhub/qNN-quest.ts` — the only quest file, per §1) imports `isDev`/`applyDevGating` and gates **exactly three things**, nothing else:
+
+```ts
+QuestsToComplete: isDev ? [] : [ /* real prerequisite quest ids */ ],
+Objectives: applyDevGating(QNN_OBJECTIVES),
+// inside OnComplete():
+if (!isDev) {
+    // Bank.transaction / RewardService claim / economy.applyMissionReward — the whole reward block
+}
+```
+
+- `HackhubPost`, mail bodies, and delay constants are **not** forked by `isDev` (see §2) — there is no "[DEV]" variant of any narrative text.
+- Full-chapter/full-campaign validation is done by literally setting `isDev = false` and playing the real quest chain in order — not a third mode, not a separate build.
+- Flipping `isDev`, running `npm run build`, copying `dist/` into the HackHub mods folder, and restarting HackHub are **manual steps the user performs themselves** — Claude edits source and runs `typecheck`/`test`/`build` as verification only, and never touches the mods folder or restarts the game.
 - Do not rely on a `hidden: true` field on an objective definition to make it surprise-reveal mid-quest. It exists in the SDK's `.d.ts` (undocumented) but was live-tested on Q02 (a hidden bonus objective meant to appear only once `completeObjective()` fired for it) and did **not** surface in-game — root cause not yet isolated (could be the field itself, or `completeObjective()` on a not-yet-"unlocked" objective being a no-op). Until this is diagnosed (e.g. with a temporary event-payload log, the same technique used to debug the Q02 GoMail template issue), keep every objective — mandatory or optional/bonus — visible in `QNN_OBJECTIVES` from the start rather than gating its visibility on `hidden`.
 
 ## 8. Docs and workflow discipline
 
-- Every quest gets its own `docs/phase13-qNN-source-recovered.md` (or equivalent) recording: recovered/adapted design source, implementation decisions, live-test findings (numbered, appended as new bugs surface), and a final "Post-validation stabilization" section for anything found after the initial PASS.
-- `docs/phase13-sequential-campaign-lock.md` and `docs/phase13-story-implementation.md` get their status line and "Current Target" section updated the moment a quest passes.
-- Standing process for every iteration, Q03-Q16 (discuss the design/fix before touching code → implement → `npm run typecheck`, both the main tsconfig and the standalone `dev/` check → `npm test` → `npm run build:replay:q01` → install **only** the replay build into HackHub's mods folder → report back and wait for live-test feedback → iterate): **`npm run build` (production) is skipped during this loop** — deferred until the quest reaches **FINAL LOCK - LIVE INGAME PASSED**, run once as the closing checkpoint before advancing to Q(n+1). Changed 2026-09-14 to save tokens/time across the many discuss→fix→retest rounds a quest typically takes; accepted tradeoff: a production-only bundling regression (something `typecheck` wouldn't catch, e.g. an esbuild/asset-copy issue) surfaces only at that checkpoint instead of every iteration, which may cost more effort to isolate if it happens — mitigation left an open question for later, not yet decided. This is scoped to Q03-Q16 only; Q01 and Q02 are already FINAL LOCK and unaffected.
+- Each quest's recovered/adapted design source and implementation decisions live in `docs/source-current.md` (per-quest section, with a "Changes from original source" table); live-test findings/bugs go in `docs/bugs.md` as new numbered entries, not a new per-quest doc.
+- **`docs/changelog.md` is the mandatory timeline — every real change gets a dated entry there** (not just a quest passing): a bug found or fixed, a mechanic changed, an email/domain rule changed, a doc reorganized, anything. One line, format and categories defined at the top of `changelog.md` itself. Full detail always lives in the specialized file (`source-current.md`/`bugs.md`/`email-rules.md`/`mechanics-reference.md`/this file/`implementation-notes.md`), never duplicated into the changelog entry itself.
+- **Standing process for every iteration, Q04-Q16 (superseded 2026-09-17 by the `isDev` unification in §7 — no more separate replay build)**: discuss the design/fix before touching code → implement with `isDev = true` → `npm run typecheck` → `npm test` (or `npm run test:all` if the change touches `tests/engine/`) → `npm run build` → the user manually copies `dist/` into HackHub's mods folder and restarts → report back and wait for live-test feedback → iterate. When the quest is ready for a full-chapter/campaign validation pass, flip `isDev = false` and repeat the same build/install/restart steps for that run only. There is only one build target now (`npm run build`) — the old two-tier "skip production build until FINAL LOCK" tradeoff no longer applies, since `isDev` is a source-level flag, not a separate bundle.
 
 ## 9. Unreachable-host page template catalog
 
@@ -133,7 +152,7 @@ For any quest target that must exist narratively (nslookup/nmap fixtures reveal 
 
 ## 10. Character and organization email domains
 
-Full rules and revision history live in `docs/email-character-contract.md` — summary for quick reference when introducing a new contact or org mailbox in Q03-Q16:
+Full rules and revision history live in `docs/email-rules.md` — summary for quick reference when introducing a new contact or org mailbox in Q03-Q16:
 
 - **Personal/individual character** (a contact not tied to a visible organization's own website, e.g. Adrian) → `.void` TLD (e.g. `phantom-net.void`). Add the identity to `src/content/characters.ts` before implementing the quest that sends/receives mail from them — never a per-quest random alias.
 - **Organization mailbox** → that organization's own hostname TLD, matching its `Website.Host` (e.g. `@skynet-logistics.idx`, not `.void`) — an org's mail domain realistically matches its own web domain.

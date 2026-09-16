@@ -3,7 +3,7 @@ import type { NetworkFileMap } from "@hotbunny/hackhub-content-sdk";
 // The `/var/log` + `/var/log/gateway` + `/var/backups/gateway` fixture tree
 // for Q03's SSH-reachable host, split out from `q03.ts` to keep that file
 // under the project's 800-line soft ceiling. Confirmed live 2026-09-15 (see
-// docs/phase13-q03-source-recovered.md "Live-Test Findings"): native
+// docs/source-current.md "Live-Test Findings"): native
 // `ls`/`cat` browse this tree correctly, and a `NetworkFileMap` with
 // `extension` set renders as `name` + "." + `extension` (e.g.
 // `{ name: "gateway.log.2", extension: "gz" }` → `gateway.log.2.gz`).

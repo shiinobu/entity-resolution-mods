@@ -3,7 +3,7 @@
 // `adrian_suspicious` and `adrian_warned_player` track Adrian's arc
 // (Complicity → Responsibility) across the whole campaign, not a single
 // quest's persistent state. First written by Q03 (see docs/phase13-q03-
-// source-recovered.md and docs/phase13-q02-source-recovered.md's "Naming
+// source-recovered.md and docs/source-current.md's "Naming
 // correction" note) — later quests may read or extend them.
 export const ENTITY_RESOLUTION_FLAGS = {
     adrianSuspicious: "entity_resolution.adrian_suspicious",

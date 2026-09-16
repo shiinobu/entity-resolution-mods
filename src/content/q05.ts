@@ -1,4 +1,4 @@
-// SKELETON — see docs/phase13-q04-q16-design-recovered.md. Mail, dialogue,
+// SKELETON — see docs/source-current.md. Mail, dialogue,
 // HackhubPost, network fixtures NOT YET WRITTEN.
 
 import { asId } from "../core/index.js";
@@ -25,7 +25,7 @@ export const Q05_WEB_HOST = "staging.nusantarapay.id";
 // No explicit port is stated for this host in the source. Inferred
 // HTTPS-only (443) from context ("login page", "not publicly linked",
 // private staging environment) — consistent with this project's port-80-
-// absent-closes convention (docs/phase13-quest-structure-standard.md §6).
+// absent-closes convention (docs/implementation-rules.md §6).
 // Revisit if a later pass finds an explicit port.
 export const Q05_NETWORK_PORTS = [
     { external: 443, internal: 443, active: true, service: "https" },
@@ -167,8 +167,8 @@ export const Q05_MAYA_REPLY_CONTENT = "What exactly are you investigating?";
 // and personal than Email" — separate from the phone-call `Dialog` mechanic
 // Q03 uses, which maps to the story's separate "Phone" system). No native
 // Relay SDK primitive exists, so per this project's Q01 precedent (Relay ->
-// Mail substitution, see docs/phase13-sequential-campaign-lock.md "Q01
-// Runtime Notes"), this is Mail-adjacent content, not Dialog territory.
+// Mail substitution, see docs/implementation-rules.md §0),
+// this is Mail-adjacent content, not Dialog territory.
 // Sourced verbatim, consistent across two draft passes (source lines
 // ~10517 and ~11042, the second a minor reinforcement of the same text).
 // TODO: exact delivery mechanism (one Mail.send per line vs. a single
@@ -190,8 +190,8 @@ export const Q05_RELAY_POST_REPORT_CONTENT = [
 // node_modules/@hotbunny/hackhub-content-sdk/index.d.ts); the closest real
 // mapping is `Twotter` (a public feed — unlike `Kisscord`, which is private
 // 1:1 chat), same adapter-pattern precedent as Q01's "Relay" -> `Mail`
-// substitution (see docs/phase13-sequential-campaign-lock.md's "Q01 Runtime
-// Notes"). Optional evidence only — no CRI reveal, just shows the problem
+// substitution (see docs/implementation-rules.md §0). Optional
+// evidence only — no CRI reveal, just shows the problem
 // isn't a single isolated case.
 export const Q05_PULSE_POST_CONTENT = [
     "several users mention unexpected financial reviews",

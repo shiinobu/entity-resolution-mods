@@ -34,7 +34,7 @@ const splitGlobPath = (globPath: string): { readonly dirPath: string; readonly p
 // `grep`/`zgrep` cannot decompress `.gz` content at all — confirmed
 // empirically against a guaranteed-present string — so this custom command
 // fills a real gap rather than shadowing a working native tool). See
-// docs/hacking-tools-reference.md for the full naming rationale.
+// docs/mechanics-reference.md for the full naming rationale.
 //
 // Confirmed live 2026-09-15: `Files.getByPath` does NOT resolve a relative
 // path against the terminal's cwd on its own — every path argument goes

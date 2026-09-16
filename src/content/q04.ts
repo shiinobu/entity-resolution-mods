@@ -1,8 +1,8 @@
 // SKELETON — objective/reward/flag data locked from
-// docs/phase13-q04-q16-design-recovered.md. Narrative content (mail,
+// docs/source-current.md. Narrative content (mail,
 // dialogue, HackhubPost, network fixtures) NOT YET WRITTEN — fill in when
 // this quest becomes the active implementation target per
-// docs/phase13-sequential-campaign-lock.md.
+// docs/source-current.md.
 
 import { asId } from "../core/index.js";
 import { flagEquals } from "../domain/shared/index.js";

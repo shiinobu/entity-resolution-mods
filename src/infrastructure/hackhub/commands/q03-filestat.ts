@@ -12,7 +12,7 @@ type Q03FilestatTools = Parameters<Command["Run"]>[0];
 const buildFileName = (name: string, extension: string | undefined): string =>
     extension ? `${name}.${extension}` : name;
 
-// Confirmed live 2026-09-15 (see docs/phase13-q03-source-recovered.md's
+// Confirmed live 2026-09-15 (see docs/source-current.md's
 // "Live-Test Findings"): `Files.getByPath` does NOT resolve a relative path
 // against the terminal's cwd on its own — every path argument must go
 // through `Files.resolvePath` first, unlike native `ls`/`cat`.

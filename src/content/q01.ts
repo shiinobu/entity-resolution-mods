@@ -17,7 +17,7 @@ export const Q01_WEB_HTTPS_URL = Q01_WEB_HOME_URL;
 
 // Experimental path-based redesign: the audited surface is exactly one public
 // host with several pages, discovered by path (dirhunter-style) instead of
-// separate subdomains. Not yet locked — see docs/phase13-q01-final-lock.md.
+// separate subdomains. Not yet locked — see docs/source-current.md.
 export const Q01_WEB_AUDIT_PATH = "/security";
 export const Q01_WEB_FORBIDDEN_PATHS = ["/portal", "/status"] as const;
 export const Q01_WEB_PATHS = [
@@ -155,7 +155,7 @@ export const Q01_OPEN_PORTS = "443";
 // HackHub feed post shown before the quest is claimed. A short teaser that
 // points to the mail for details, rather than repeating the mail's content —
 // matches the pattern agreed for Q02 and locked as standard for Q03-Q16 (see
-// docs/phase13-quest-structure-standard.md).
+// docs/implementation-rules.md).
 export const Q01_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     content: "Short audit for a client in Jakarta. Details in your mail.",
     author: {

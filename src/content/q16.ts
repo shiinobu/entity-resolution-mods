@@ -1,4 +1,4 @@
-// SKELETON — see docs/phase13-q04-q16-design-recovered.md. Mail, dialogue,
+// SKELETON — see docs/source-current.md. Mail, dialogue,
 // HackhubPost, network fixtures NOT YET WRITTEN.
 //
 // UPDATED 2026-09-16 (Unknown-focused re-pass): the source has a full

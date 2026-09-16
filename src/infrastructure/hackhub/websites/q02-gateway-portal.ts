@@ -22,7 +22,7 @@ const RENDERED_HTTP_ERROR_PAGE = httpErrorPage.replace(
 );
 
 // Experimental: Website.Host set to a raw IP instead of a domain name — not
-// previously used in this project. See docs/phase13-q02-source-recovered.md.
+// previously used in this project. See docs/source-current.md.
 //
 // Dynamic page: nginx genuinely rejects plain HTTP on an HTTPS-only port with
 // a "400 Bad Request" page, so an HTTP request here reproduces that instead of

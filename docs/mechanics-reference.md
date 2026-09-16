@@ -148,8 +148,7 @@ wide output:**
    avoid horizontal tables entirely for content whose width can't be
    bounded in advance.
 
-Full details: `docs/phase13-q03-source-recovered.md` → "Live-Test Findings
-(SSH Probe, 2026-09-15)".
+Full details: `docs/bugs.md` entries 2, 6, 16.
 
 ## 3. Per-Quest Usage Map
 
@@ -185,8 +184,16 @@ last activity" objective (required both `filestat` AND `bootlog`) is split
 into two objectives, each completing independently on its own command, for
 clearer progress feedback.
 
+**Added 2026-09-16/17 (credential-delivery redesign, not yet re-verified live):**
+a new `findAccess` (00) objective precedes `accessHost` — the player runs
+the custom `crackhash <hash>` command against a hash found in the incoming
+mail's `old-creds.bak` attachment to recover the SSH username/password
+(replacing two abandoned native-tool attempts, `john`/`hydra` — see
+`docs/bugs.md` entry 3).
+
 | # | Objective | Tool | Type | Status |
 |---|---|---|---|---|
+| 00 | Dig up the SSH credentials (`findAccess`) | `crackhash` | Custom | Not yet re-verified live |
 | 01 | Access the remote host (`accessHost`) | `ssh` | Native | Confirmed live |
 | 02 | Check the servers system logs (`checkLogs`) | `ls`/`cat` against `NetworkUser.rootFiles` | Native | Confirmed live |
 | 03 | Check the file timestamp (`checkTimestamp`) | `filestat` (was `stat`) | Custom | Confirmed live |
@@ -198,22 +205,23 @@ clearer progress feedback.
 **Phone-call `options`/`onEnd`/`onSelect` (2026-09-15):** the SDK's
 `onEnd`/`onSelect` callback fields are confirmed permanently non-functional
 in this HackHub build (external bug filed:
-`docs/hackhub-dialog-onend-bug-report.md`) — but `options`/`switchBranch`
+`docs/bugs.md (entry 1)`) — but `options`/`switchBranch`
 branching itself works correctly once every function property is removed
 from the whole `Dialog` object. Full A/B/C player-choice branching from the
 source design is shipped and live-tested. One residual, unfixable
 limitation: objective/reward completion can't be tied precisely to the call
 actually ending (no dialog-driven signal exists at all — see
-`docs/phase13-q03-source-recovered.md` finding 8), so it still runs on a
+`docs/bugs.md` entry 1's root-cause discussion), so it still runs on a
 generous fixed delay from call-start instead.
 
-Full technical detail: `docs/phase13-q03-source-recovered.md`.
+Full technical detail: `docs/bugs.md` entry 1; story/objective detail:
+`docs/source-current.md`.
 
 ### Q04–Q16 — SKELETON ONLY, no quest registered/implemented
 
 A structural skeleton (objectives/rewards/flags/dialogue/mail where
 sourced) exists for all of Q04–Q16 as of 2026-09-16 — see
-`docs/phase13-q04-q16-skeleton-scaffold.md` for the full inventory. None
+`docs/implementation-notes.md` for the full inventory. None
 are wired into `src/index.ts`; none have real command/event logic. Tool
 mappings below are the skeleton's `// tool:` comments (provisional,
 confirm when each quest is actually implemented), not confirmed live

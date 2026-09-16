@@ -78,7 +78,7 @@ export const Q02_CERTIFICATE_ISSUER = "ARKA Secure Infrastructure";
 // is the template `id` (not `title`/`label`) and `content` is a raw JSON
 // object of the field values — not merged template text. Objective 05
 // validation (isAnomalyReport) accounts for both this path and freehand
-// composition. See docs/phase13-q02-source-recovered.md.
+// composition. See docs/source-current.md.
 export const Q02_REPORT_TEMPLATE_ID = "entity_resolution.q02.report";
 export const Q02_REPORT_TEMPLATE_LABEL = "Anomaly Report";
 
@@ -112,7 +112,7 @@ export const Q02_REPORT_BODY = [
 
 // HackHub feed post shown before the quest is claimed. A short teaser that
 // points to the mail for details, matching the pattern locked as standard
-// for Q03-Q16 (see docs/phase13-quest-structure-standard.md).
+// for Q03-Q16 (see docs/implementation-rules.md).
 export const Q02_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     content: "Follow-up from the last client. Check your mail.",
     author: {

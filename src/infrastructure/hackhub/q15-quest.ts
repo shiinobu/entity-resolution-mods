@@ -15,7 +15,7 @@ import { Q15_OBJECTIVES } from "../../content/index.js";
 // phone-call-style spoken exchange in the source). switchBranch/isEnd
 // only — never onEnd/onSelect, see q03-quest.ts's Dialog field comment
 // (permanently non-functional in this HackHub build,
-// docs/hackhub-dialog-onend-bug-report.md).
+// docs/bugs.md (entry 1)).
 const Q15_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "Maya", text: "We can reconstruct the sequence.", audio: "", timeout: 3000 },

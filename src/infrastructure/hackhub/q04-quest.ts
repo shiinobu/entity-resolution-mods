@@ -37,8 +37,8 @@ export class EntityResolutionQ04Quest extends HackHubQuest<Q04QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-quest-structure-standard.md and
-        // docs/phase13-q04-q16-design-recovered.md. Network fixtures reuse
+        // TODO: implement — see docs/implementation-rules.md and
+        // docs/source-current.md. Network fixtures reuse
         // Q03's edge-03 host (Q04_TARGET_IP); opening mail not yet written.
     }
 

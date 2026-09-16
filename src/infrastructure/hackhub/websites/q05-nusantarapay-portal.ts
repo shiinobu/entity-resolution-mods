@@ -1,6 +1,6 @@
-// SKELETON — see docs/phase13-q04-q16-design-recovered.md. Host/IP are real
+// SKELETON — see docs/source-current.md. Host/IP are real
 // (sourced — see src/content/q05.ts's Q05_WEB_HOST/Q05_TARGET_IP comment).
-// No protocol-gating yet (§6 of docs/phase13-quest-structure-standard.md) —
+// No protocol-gating yet (§6 of docs/implementation-rules.md) —
 // decide once Q05 becomes the active implementation target (this host is
 // HTTPS-only per its own network fixture, so §6 gating will need to reject
 // plain http:// once real page content is written).

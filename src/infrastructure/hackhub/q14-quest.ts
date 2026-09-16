@@ -18,7 +18,7 @@ import { Q14_OBJECTIVES } from "../../content/index.js";
 // called explicitly, same TODO status as every other event-wiring gap in
 // this skeleton. switchBranch/isEnd only — never onEnd/onSelect, see
 // q03-quest.ts's Dialog field comment (permanently non-functional in this
-// HackHub build, docs/hackhub-dialog-onend-bug-report.md).
+// HackHub build, docs/bugs.md (entry 1)).
 const Q14_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "Daniel", text: "It's shared.", audio: "", timeout: 3000 },

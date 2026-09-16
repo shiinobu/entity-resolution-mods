@@ -1,4 +1,4 @@
-// SKELETON — see docs/phase13-q04-q16-design-recovered.md. Mail, dialogue,
+// SKELETON — see docs/source-current.md. Mail, dialogue,
 // HackhubPost, network fixtures NOT YET WRITTEN.
 
 import { asId } from "../core/index.js";
@@ -71,7 +71,7 @@ export const Q08_RIZKY_LINKED_TO_SUBJECT_FLAG = "entity_resolution.q08.rizky_lin
 // Mail content — sourced from Q08's design-doc "1. Opening" subsection.
 // Source: "Maya mengirim lokasi pertemuan melalui Relay" — per this
 // project's own established precedent (Q01's "Relay" substitution, see
-// docs/phase13-sequential-campaign-lock.md "Q01 Runtime Notes": the SDK has
+// docs/implementation-rules.md §0 (Relay -> Mail substitution): the SDK has
 // no native Relay API, so this narrative beat is implemented through the
 // existing Mail channel), treated as Mail here too, not a new mechanism.
 export const Q08_INCOMING_MAIL_SUBJECT = "Your name";
@@ -91,7 +91,7 @@ export const Q08_INCOMING_MAIL_CONTENT = [
 // separate from the phone-call `Dialog` mechanic Q03 uses for its own
 // separate "Phone" system). No native Relay SDK primitive exists, so per
 // this project's Q01 precedent (Relay -> Mail substitution, see
-// docs/phase13-sequential-campaign-lock.md "Q01 Runtime Notes"), this is
+// docs/implementation-rules.md §0 (Relay -> Mail substitution)), this is
 // Mail-adjacent content. Sourced verbatim from the source's fuller/later
 // pass (~line 14550, which extends an earlier shorter draft at ~14179 with
 // the "We should talk." close) — used here as the more complete version.

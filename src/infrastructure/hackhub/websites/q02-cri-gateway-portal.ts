@@ -17,7 +17,7 @@ import diagnosticTemplate from "./templates/unreachable-diagnostic.html";
 // used to hit HackHub's generic "no such host" 404 on both http:// and
 // https://; this renders that same outcome as an in-fiction connection
 // timeout instead, reusing the reusable templates/unreachable-diagnostic.html
-// base (see docs/phase13-quest-structure-standard.md for the template
+// base (see docs/implementation-rules.md for the template
 // catalog). Two Website registrations are needed — one per Host string —
 // since a player may reach this dead end via either the hostname or the
 // raw IP nslookup revealed.
@@ -48,7 +48,7 @@ export class Q02CriGatewayHostnameWebsite extends Website {
 
 // Experimental: Website.Host set to a raw IP instead of a domain name —
 // same pattern already used by Q02GatewayWebsite. See
-// docs/phase13-q02-source-recovered.md.
+// docs/source-current.md.
 @RegisterWebsite
 export class Q02CriGatewayIpWebsite extends Website {
     SiteName = Q02_HIDDEN_HOSTNAME_IP;

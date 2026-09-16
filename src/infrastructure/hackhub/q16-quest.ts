@@ -29,7 +29,7 @@ import { Q16_OBJECTIVES } from "../../content/index.js";
 // exact locked closing text. switchBranch/isEnd only — never
 // onEnd/onSelect, see q03-quest.ts's Dialog field comment (permanently
 // non-functional in this HackHub build,
-// docs/hackhub-dialog-onend-bug-report.md).
+// docs/bugs.md (entry 1)).
 const Q16_DIALOG: QuestDialogDefinition = {
     main: [
         { speaker: "player", text: "ARKA-OPS-0441.", audio: "", timeout: 3000 },
@@ -210,7 +210,7 @@ export class EntityResolutionQ16Quest extends HackHubQuest<Q16QuestData> {
     }
 
     override OnStart() {
-        // TODO: implement — see docs/phase13-q04-q16-design-recovered.md.
+        // TODO: implement — see docs/source-current.md.
     }
 
     override OnObjectivesStart() {

@@ -145,7 +145,7 @@ export const Q15_OPERATOR_EMPLOYMENT_ARKA_FLAG = "entity_resolution.q15.operator
 // messaging system in the source's story bible, separate from the
 // phone-call `Dialog` mechanic — no native Relay SDK primitive exists, so
 // per this project's Q01 precedent (Relay -> Mail substitution, see
-// docs/phase13-sequential-campaign-lock.md "Q01 Runtime Notes") this is
+// docs/implementation-rules.md §0 (Relay -> Mail substitution)) this is
 // Mail-adjacent content. Re-verified against the LOCKED docx — unchanged
 // from the earlier relay-extraction pass.
 export const Q15_RELAY_OPENING_CONTENT = [

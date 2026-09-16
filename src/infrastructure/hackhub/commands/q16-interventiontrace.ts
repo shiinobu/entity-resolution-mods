@@ -3,7 +3,7 @@ import { Command, RegisterCommand } from "@hotbunny/hackhub-content-sdk";
 type Q16InterventiontraceTools = Parameters<Command["Run"]>[0];
 
 // TODO: implement when Q16 becomes the active implementation target.
-// See docs/phase13-q04-q16-design-recovered.md (reconstructInterventionPattern objective).
+// See docs/source-current.md (reconstructInterventionPattern objective).
 @RegisterCommand({ default: true, scope: "remote" })
 export class Q16InterventiontraceCommand extends Command {
     CommandName = "interventiontrace";
