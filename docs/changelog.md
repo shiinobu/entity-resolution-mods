@@ -138,3 +138,13 @@ for unbuilt quests).
   `src/content/flags.ts` and `src/infrastructure/hackhub/commands/q03-log-tools.ts`
   that survived the earlier doc-reorg `sed` passes (one split across two
   comment lines, one pointing at an already-consolidated test file).
+- **New `docs/architecture.md`**: documents `src/`'s engineering layering
+  (core/domain/state/application/infrastructure/content), ownership
+  boundaries, and bootstrap flow — nothing previously explained the
+  codebase's architecture as a whole. Written after two audit passes: one
+  confirming what's actually used vs dead (the recon/packet cleanup above),
+  one checking for redundancy/inconsistency across all 16 quests' content
+  and quest-adapter files. Only concrete finding from the second pass:
+  `src/infrastructure/hackhub/q03-quest.ts` is 834 lines, over the
+  project's own 800-line soft ceiling — flagged as a split candidate, not
+  yet acted on.
