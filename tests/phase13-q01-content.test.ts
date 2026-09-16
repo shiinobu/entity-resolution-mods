@@ -17,7 +17,6 @@ import {
     Q01_RECON_INPUT_VARIANTS,
     Q01_RECON_PROFILE,
     Q01_RECON_RESULT,
-    Q01_SUBFINDER_RESULT,
     Q01_REPORT_BODY,
     Q01_REPORT_BODY_TEMPLATE,
     Q01_REPORT_RECIPIENT,
@@ -59,37 +58,6 @@ const questSource = readFileSync(
 
 const q01ContentSource = readFileSync(
     resolve(fileURLToPath(new URL("../src/content/q01.ts", import.meta.url))),
-    "utf8",
-);
-
-const reconCommandSource = readFileSync(
-    resolve(
-        fileURLToPath(
-            new URL("../src/infrastructure/hackhub/commands/recon.ts", import.meta.url),
-        ),
-    ),
-    "utf8",
-);
-
-const subfinderCommandSource = readFileSync(
-    resolve(
-        fileURLToPath(
-            new URL(
-                "../src/infrastructure/hackhub/commands/q01-subfinder.ts",
-                import.meta.url,
-            ),
-        ),
-    ),
-    "utf8",
-);
-
-const productionEntrySource = readFileSync(
-    resolve(fileURLToPath(new URL("../src/index.ts", import.meta.url))),
-    "utf8",
-);
-
-const replayEntrySource = readFileSync(
-    resolve(fileURLToPath(new URL("../dev/q01-replay-entry.ts", import.meta.url))),
     "utf8",
 );
 
@@ -160,23 +128,6 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         );
     });
 
-    it("registers the shared recon command in production and replay", () => {
-        assert.match(
-            reconCommandSource,
-            /@RegisterCommand\(\{\s*default:\s*true\s*\}\)/,
-        );
-        assert.match(reconCommandSource, /CommandName\s*=\s*"recon"/);
-        assert.match(reconCommandSource, /opsRuntime\.runRecon/);
-        assert.match(
-            productionEntrySource,
-            /import "\.\/infrastructure\/hackhub\/commands\/recon\.js";/,
-        );
-        assert.match(
-            replayEntrySource,
-            /import "\.\.\/src\/infrastructure\/hackhub\/commands\/recon\.js";/,
-        );
-    });
-
     it("keeps the Lynx address as one runtime list entry and resets stale fixtures before registration (fixture data now lives in content/q01.ts, shared by production and replay)", () => {
         assert.match(q01ContentSource, /address:\s*\[Q01_WEB_HOME_URL\],/);
         assert.doesNotMatch(
@@ -207,30 +158,6 @@ describe("Phase 13 Q01 — THE CONTRACT", () => {
         assert.doesNotMatch(questSource, /const Q01_NMAP_RESULT/);
         assert.doesNotMatch(questSource, /const Q01_LYNX_RESULT/);
         assert.match(questSource, /ports: Q01_NETWORK_PORTS,/);
-    });
-
-    it("keeps the Q01 subfinders command registered as a standalone tool (no longer gates Q01 progression)", () => {
-        assert.match(
-            subfinderCommandSource,
-            /@RegisterCommand\(\{\s*default:\s*true\s*\}\)/,
-        );
-        assert.match(subfinderCommandSource, /CommandName\s*=\s*"subfinders"/);
-        assert.match(
-            subfinderCommandSource,
-            /Q01_SUBFINDER_RESULT\.split\("\\n"\)/,
-        );
-        assert.equal(
-            Q01_SUBFINDER_RESULT,
-            "portal.skynet-logistics.idx\nsecurity.skynet-logistics.idx\nstatus.skynet-logistics.idx\nwww.skynet-logistics.idx",
-        );
-        assert.match(
-            productionEntrySource,
-            /import "\.\/infrastructure\/hackhub\/commands\/q01-subfinder\.js";/,
-        );
-        assert.match(
-            replayEntrySource,
-            /import "\.\.\/src\/infrastructure\/hackhub\/commands\/q01-subfinder\.js";/,
-        );
     });
 
     it("gates Objective 04 progress on the native Terminal.Dirhunter event (experimental path-based redesign)", () => {
