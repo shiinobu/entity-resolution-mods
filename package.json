@@ -15,7 +15,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "@hotbunny/hackhub-content-sdk": "^0.21.0",
+    "@hotbunny/hackhub-content-sdk": "^0.24.0",
     "@types/node": "^22.20.2",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
