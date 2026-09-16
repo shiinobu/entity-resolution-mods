@@ -1,6 +1,5 @@
 node_modules/
 dist*/
-dev/
 coverage/
 .env
 .env.*
@@ -9,7 +8,5 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
-/dev/replay-id.generated.ts
-/.dev-q01-replay-run
 .claude/rules/
 .claude/settings.local.json

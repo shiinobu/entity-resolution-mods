@@ -1,6 +1,7 @@
 import "./infrastructure/hackhub/commands/q03-filestat.js";
 import "./infrastructure/hackhub/commands/q03-bootlog.js";
 import "./infrastructure/hackhub/commands/q03-zgrep.js";
+import "./infrastructure/hackhub/commands/q03-crackhash.js";
 import "./infrastructure/hackhub/websites/q01-skynet-portal.js";
 import "./infrastructure/hackhub/websites/q02-gateway-portal.js";
 import "./infrastructure/hackhub/websites/q02-edge-portal.js";

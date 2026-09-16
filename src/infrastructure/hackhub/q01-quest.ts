@@ -8,6 +8,8 @@ import {
 } from "@hotbunny/hackhub-content-sdk";
 
 import {
+    applyDevGating,
+    isDev,
     Q01_ADRIAN_EMAIL,
     Q01_CLIENT_NAME,
     Q01_COMPLETION_MAIL_CONTENT_PRODUCTION,
@@ -136,7 +138,7 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
     };
     override HackhubPost = Q01_HACKHUB_POST_PRODUCTION;
 
-    override Objectives = Q01_OBJECTIVES;
+    override Objectives = applyDevGating(Q01_OBJECTIVES);
 
     override CreateData(): Q01QuestData {
         return {
@@ -218,49 +220,51 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
             );
         }
 
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q01.xp.external-audit"),
-            kind: "experience",
-            amount: Q01_REWARDS.externalAudit,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q01.xp.network-service-enumeration"),
-            kind: "experience",
-            amount: Q01_REWARDS.networkServiceEnumeration,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q01.xp.basic-vulnerability-assessment"),
-            kind: "experience",
-            amount: Q01_REWARDS.basicVulnerabilityAssessment,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q01.xp.submit-report"),
-            kind: "experience",
-            amount: Q01_REWARDS.submitCorrectReport,
-        });
-
-        const moneyGranted = gameRuntime.economy.applyMissionReward(
-            {
-                id: asId<"MissionReward">("entity_resolution.q01.money"),
-                questId: "entity_resolution.q01",
-                amount: Q01_REWARDS.money,
-                rewardIndex: 0,
-            },
-            Q01_FINAL_STATE_FLAG,
-        );
-
-        if (moneyGranted) {
-            Bank.transaction({
-                amount: Q01_REWARDS.money,
-                description: Q01_REPORT_SUBJECT,
-                from: {
-                    IBAN: "ID00SKYNETLOGISTICS",
-                    name: Q01_CLIENT_NAME,
-                },
+        if (!isDev) {
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q01.xp.external-audit"),
+                kind: "experience",
+                amount: Q01_REWARDS.externalAudit,
             });
+
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q01.xp.network-service-enumeration"),
+                kind: "experience",
+                amount: Q01_REWARDS.networkServiceEnumeration,
+            });
+
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q01.xp.basic-vulnerability-assessment"),
+                kind: "experience",
+                amount: Q01_REWARDS.basicVulnerabilityAssessment,
+            });
+
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q01.xp.submit-report"),
+                kind: "experience",
+                amount: Q01_REWARDS.submitCorrectReport,
+            });
+
+            const moneyGranted = gameRuntime.economy.applyMissionReward(
+                {
+                    id: asId<"MissionReward">("entity_resolution.q01.money"),
+                    questId: "entity_resolution.q01",
+                    amount: Q01_REWARDS.money,
+                    rewardIndex: 0,
+                },
+                Q01_FINAL_STATE_FLAG,
+            );
+
+            if (moneyGranted) {
+                Bank.transaction({
+                    amount: Q01_REWARDS.money,
+                    description: Q01_REPORT_SUBJECT,
+                    from: {
+                        IBAN: "ID00SKYNETLOGISTICS",
+                        name: Q01_CLIENT_NAME,
+                    },
+                });
+            }
         }
 
         sendAdrianMail(`Re: ${Q01_REPORT_SUBJECT}`, Q01_COMPLETION_MAIL_CONTENT_PRODUCTION);

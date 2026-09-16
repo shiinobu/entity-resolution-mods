@@ -8,6 +8,8 @@ import {
 } from "@hotbunny/hackhub-content-sdk";
 
 import {
+    applyDevGating,
+    isDev,
     Q02_ADRIAN_EMAIL,
     Q02_ANOMALOUS_PORT,
     Q02_CERTIFICATE_ISSUER,
@@ -109,14 +111,14 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
     override Group = "storyline" as const;
     override AutoStart = false;
     override AutoComplete = true;
-    override QuestsToComplete = ["entity_resolution.q01"];
+    override QuestsToComplete = isDev ? [] : ["entity_resolution.q01"];
     override Rewards = {
         money: 0,
         xp: 0,
     };
     override HackhubPost = Q02_HACKHUB_POST_PRODUCTION;
 
-    override Objectives = Q02_OBJECTIVES;
+    override Objectives = applyDevGating(Q02_OBJECTIVES);
 
     override CreateData(): Q02QuestData {
         return {
@@ -212,63 +214,65 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
             );
         }
 
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q02.xp.investigate-target"),
-            kind: "experience",
-            amount: Q02_REWARDS.investigateTarget,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q02.xp.service-enumeration"),
-            kind: "experience",
-            amount: Q02_REWARDS.serviceEnumeration,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q02.xp.certificate-inspection"),
-            kind: "experience",
-            amount: Q02_REWARDS.certificateInspection,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q02.xp.report-anomaly"),
-            kind: "experience",
-            amount: Q02_REWARDS.reportAnomaly,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q02.xp.identify-cri-hostname"),
-            kind: "experience",
-            amount: Q02_REWARDS.identifyCriHostname,
-        });
-
-        if (this.Data.dnsChecked) {
+        if (!isDev) {
             gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q02.xp.check-dns"),
+                id: asId<"Reward">("entity_resolution.q02.xp.investigate-target"),
                 kind: "experience",
-                amount: Q02_REWARDS.checkDns,
+                amount: Q02_REWARDS.investigateTarget,
             });
-        }
 
-        const moneyGranted = gameRuntime.economy.applyMissionReward(
-            {
-                id: asId<"MissionReward">("entity_resolution.q02.money"),
-                questId: "entity_resolution.q02",
-                amount: Q02_REWARDS.money,
-                rewardIndex: 0,
-            },
-            Q02_FINAL_STATE_FLAG,
-        );
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q02.xp.service-enumeration"),
+                kind: "experience",
+                amount: Q02_REWARDS.serviceEnumeration,
+            });
 
-        if (moneyGranted) {
-            Bank.transaction({
-                amount: Q02_REWARDS.money,
-                description: Q02_REPORT_SUBJECT,
-                from: {
-                    IBAN: "ID00SKYNETLOGISTICS",
-                    name: Q02_CLIENT_NAME,
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q02.xp.certificate-inspection"),
+                kind: "experience",
+                amount: Q02_REWARDS.certificateInspection,
+            });
+
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q02.xp.report-anomaly"),
+                kind: "experience",
+                amount: Q02_REWARDS.reportAnomaly,
+            });
+
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q02.xp.identify-cri-hostname"),
+                kind: "experience",
+                amount: Q02_REWARDS.identifyCriHostname,
+            });
+
+            if (this.Data.dnsChecked) {
+                gameRuntime.reward.claim({
+                    id: asId<"Reward">("entity_resolution.q02.xp.check-dns"),
+                    kind: "experience",
+                    amount: Q02_REWARDS.checkDns,
+                });
+            }
+
+            const moneyGranted = gameRuntime.economy.applyMissionReward(
+                {
+                    id: asId<"MissionReward">("entity_resolution.q02.money"),
+                    questId: "entity_resolution.q02",
+                    amount: Q02_REWARDS.money,
+                    rewardIndex: 0,
                 },
-            });
+                Q02_FINAL_STATE_FLAG,
+            );
+
+            if (moneyGranted) {
+                Bank.transaction({
+                    amount: Q02_REWARDS.money,
+                    description: Q02_REPORT_SUBJECT,
+                    from: {
+                        IBAN: "ID00SKYNETLOGISTICS",
+                        name: Q02_CLIENT_NAME,
+                    },
+                });
+            }
         }
 
         sendAdrianMail(`Re: ${Q02_REPORT_SUBJECT}`, Q02_COMPLETION_MAIL_CONTENT_PRODUCTION);

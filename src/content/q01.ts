@@ -164,18 +164,7 @@ export const Q01_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     },
 };
 
-export const Q01_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = {
-    content: "DEV REPLAY — Q01 live-testing fixture. Apply to replay THE CONTRACT.",
-    author: {
-        name: "Adrian Cole [DEV]",
-        avatar: "assets/adrian-cole.png",
-    },
-};
-
-// Adrian's opening mail. Identical between production and replay (matching
-// Q02_INCOMING_MAIL_CONTENT's pattern) — the "DEV REPLAY" signal already
-// comes through Title/HackhubPost/author elsewhere, so the mail body itself
-// doesn't need its own divergent wording. Reuses Q01_REPORT_SUBJECT as its
+// Adrian's opening mail. Reuses Q01_REPORT_SUBJECT as its
 // subject (a single mail thread runs from this brief through the report to
 // the completion reply) — an intentional exception to the separate-subject
 // pattern locked for Q03-Q16; Q01 is FINAL LOCK and this threading is
@@ -225,8 +214,6 @@ export const Q01_REPORT_TEMPLATE_LABEL = "Audit Report";
 // same tick the report is sent.
 export const Q01_SUBMIT_AUDIT_DELAY_MS = 7_000;
 
-// Two named variants (not one shared constant) since the wording genuinely
-// differs: production mentions the real money reward, replay does not.
 export const Q01_COMPLETION_MAIL_CONTENT_PRODUCTION = [
     "Looks clean.",
     "",
@@ -235,16 +222,6 @@ export const Q01_COMPLETION_MAIL_CONTENT_PRODUCTION = [
     "Payment's on the way.",
     "",
     "I'll let you know if they need anything else.",
-    "",
-    "— Adrian",
-].join("\n");
-
-export const Q01_COMPLETION_MAIL_CONTENT_REPLAY = [
-    "Looks clean.",
-    "",
-    "Client should be happy.",
-    "",
-    "DEV replay complete.",
     "",
     "— Adrian",
 ].join("\n");

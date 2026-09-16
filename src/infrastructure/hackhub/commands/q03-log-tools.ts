@@ -1,6 +1,6 @@
 // Pure formatting/matching helpers for Q03 — the three custom commands
 // (filestat, bootlog, zgrep) plus the report-template validation in
-// q03-quest.ts/dev/q03-replay-quest.ts. Deliberately free of any
+// q03-quest.ts. Deliberately free of any
 // @hotbunny/hackhub-content-sdk import so this module is testable under
 // plain `tsx --test` with no game runtime — see
 // tests/phase13-q03-log-tools.test.ts.

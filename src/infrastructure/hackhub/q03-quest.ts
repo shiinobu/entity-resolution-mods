@@ -6,12 +6,18 @@ import {
     Quest as HackHubQuest,
     RegisterQuest,
     Shell,
+    type MailAttachment,
     type QuestDialogDefinition,
     type QuestDialogSpeech,
 } from "@hotbunny/hackhub-content-sdk";
 
 import {
+    applyDevGating,
     ENTITY_RESOLUTION_FLAGS,
+    isDev,
+    Q03_ACCESS_ATTACHMENT_EXTENSION,
+    Q03_ACCESS_ATTACHMENT_NAME,
+    Q03_ACCESS_HASH,
     Q03_ADRIAN_EMAIL,
     Q03_BACKUP_CHECKED_FLAG,
     Q03_BACKUP_RESTRICTED_FLAG,
@@ -40,7 +46,6 @@ import {
     Q03_REWARDS,
     Q03_ROOT_FILES,
     Q03_ROUTER_IP,
-    Q03_SSH_HYDRA_TARGET,
     Q03_SSH_PASSWORD,
     Q03_SSH_USERNAME,
     Q03_TARGET_IP,
@@ -53,6 +58,7 @@ import { monthDayMatches, numberSetsMatch } from "./commands/q03-log-tools.js";
 
 interface Q03QuestData {
     readonly targetIp: string;
+    readonly accessFound: boolean;
     readonly connected: boolean;
     readonly logsChecked: boolean;
     readonly filestatRun: boolean;
@@ -78,12 +84,9 @@ interface TerminalCatData {
     readonly extension?: string;
 }
 
-interface HydraResultData {
-    readonly ip: string;
-    readonly credentials?: {
-        readonly username: string;
-        readonly password: string;
-    };
+interface MailReadData {
+    readonly from: string;
+    readonly subject: string;
 }
 
 const includesArgMatching = (args: readonly string[], needle: string): boolean =>
@@ -142,7 +145,6 @@ const withDialogLineReadTap = (
 // documented on OnStart below.
 const resetQ03ShellFixtures = (): void => {
     Shell.removeCommandData("ssh", { host: Q03_TARGET_IP, key: Q03_SSH_PASSWORD });
-    Shell.removeCommandData("hydra", { user: Q03_SSH_USERNAME, target: Q03_SSH_HYDRA_TARGET });
     // Defensive: `Shell.addCommandData`/`removeCommandData` is a registry
     // keyed by exact (command, input) — separate from `Network.*` entirely,
     // and apparently persists independent of which quest originally set it.
@@ -170,25 +172,18 @@ const registerQ03ShellFixtures = (): void => {
         { host: Q03_TARGET_IP, key: Q03_SSH_PASSWORD },
         { ip: Q03_TARGET_IP, status: "OPEN" },
     );
-
-    // Revised 2026-09-15 after live-test: `john` has its own internal crack
-    // simulation and ignores addCommandData entirely ("The password could
-    // not be cracked." regardless of fixture data). `hydra` IS part of the
-    // typed CommandDataMap. Confirmed live usage:
-    // `hydra -T [ip:port] -P [wordlist] -l [username]` — `target` must be
-    // the combined `ip:port` string, not a bare IP.
-    Shell.addCommandData(
-        "hydra",
-        { user: Q03_SSH_USERNAME, target: Q03_SSH_HYDRA_TARGET },
-        { credentials: { username: Q03_SSH_USERNAME, password: Q03_SSH_PASSWORD } },
-    );
 };
 
-const sendAdrianMail = (subject: string, content: string): void => {
+const sendAdrianMail = (
+    subject: string,
+    content: string,
+    attachments?: MailAttachment[],
+): void => {
     Mail.send({
         from: Q03_ADRIAN_EMAIL,
         subject,
         content,
+        ...(attachments ? { attachments } : {}),
     });
 };
 
@@ -201,7 +196,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
     override Group = "storyline" as const;
     override AutoStart = false;
     override AutoComplete = true;
-    override QuestsToComplete = ["entity_resolution.q02"];
+    override QuestsToComplete = isDev ? [] : ["entity_resolution.q02"];
     override Rewards = {
         money: 0,
         xp: 0,
@@ -386,11 +381,12 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         // (still imprecise, but only viable) completion trigger.
     });
 
-    override Objectives = Q03_OBJECTIVES;
+    override Objectives = applyDevGating(Q03_OBJECTIVES);
 
     override CreateData(): Q03QuestData {
         return {
             targetIp: Q03_TARGET_IP,
+            accessFound: false,
             connected: false,
             logsChecked: false,
             filestatRun: false,
@@ -428,11 +424,11 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         // this never matters: OnStart runs exactly once per quest, ever, and
         // any prior network at Q03_ROUTER_IP would already be this same
         // quest's own — never created twice. The only way to orphan a router
-        // at Q03_ROUTER_IP is our own dev workflow of rebuilding the replay
-        // mod (which mints a new quest Name each time, orphaning the
-        // previous claim without running its OnAbandon) — use the debug
-        // console's `mods.reset <modId>` between dev rebuilds instead of
-        // papering over it here at the cost of a live race.
+        // at Q03_ROUTER_IP is reinstalling a rebuilt dev copy of this same
+        // mod over an existing claim (orphaning the previous claim without
+        // running its OnAbandon) — use the debug console's `mods.reset
+        // <modId>` after reinstalling instead of papering over it here at
+        // the cost of a live race.
         Network.destroyNetwork(Q03_TARGET_IP);
 
         // REVISED 2026-09-15 (second pass) after live-test: neither a bare
@@ -474,7 +470,13 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         // hidden target, so the opening mail states it directly.
         Network.registerDomain(Q03_WEB_HOST, this.Data.targetIp);
 
-        sendAdrianMail(Q03_INCOMING_MAIL_SUBJECT, Q03_INCOMING_MAIL_CONTENT);
+        sendAdrianMail(Q03_INCOMING_MAIL_SUBJECT, Q03_INCOMING_MAIL_CONTENT, [
+            {
+                name: Q03_ACCESS_ATTACHMENT_NAME,
+                extension: Q03_ACCESS_ATTACHMENT_EXTENSION,
+                data: Q03_ACCESS_HASH,
+            },
+        ]);
     }
 
     override OnObjectivesStart() {
@@ -509,12 +511,8 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
             this.handleSshConnected(ip);
         });
 
-        // Diagnostic only — no objective depends on this. The player reads
-        // the cracked password from hydra's own terminal output and types it
-        // into `ssh` themselves; this just confirms live whether the native
-        // event actually reports our declared credentials back.
-        this.Events.on("Terminal.Hydra", (data) => {
-            this.handleTerminalHydra(data);
+        this.Events.on("Mail.Read", (data) => {
+            this.handleMailRead(data);
         });
 
         this.Events.on("Mail.Sent", (data) => {
@@ -546,69 +544,71 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
             );
         }
 
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q03.xp.investigate-server-history"),
-            kind: "experience",
-            amount: Q03_REWARDS.investigateServerHistory,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q03.xp.check-file-timestamp"),
-            kind: "experience",
-            amount: Q03_REWARDS.checkFileTimestamp,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q03.xp.review-boot-history"),
-            kind: "experience",
-            amount: Q03_REWARDS.reviewBootHistory,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q03.xp.identify-log-gaps"),
-            kind: "experience",
-            amount: Q03_REWARDS.identifyLogGaps,
-        });
-
-        gameRuntime.reward.claim({
-            id: asId<"Reward">("entity_resolution.q03.xp.correlate-missing-records"),
-            kind: "experience",
-            amount: Q03_REWARDS.correlateMissingRecords,
-        });
-
-        if (this.Data.backupChecked) {
+        if (!isDev) {
             gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q03.xp.check-backup-archive"),
+                id: asId<"Reward">("entity_resolution.q03.xp.investigate-server-history"),
                 kind: "experience",
-                amount: Q03_REWARDS.checkBackupArchive,
+                amount: Q03_REWARDS.investigateServerHistory,
             });
 
             gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q03.xp.identify-cri-policy"),
+                id: asId<"Reward">("entity_resolution.q03.xp.check-file-timestamp"),
                 kind: "experience",
-                amount: Q03_REWARDS.identifyCriPolicy,
+                amount: Q03_REWARDS.checkFileTimestamp,
             });
-        }
 
-        const moneyGranted = gameRuntime.economy.applyMissionReward(
-            {
-                id: asId<"MissionReward">("entity_resolution.q03.money"),
-                questId: "entity_resolution.q03",
-                amount: Q03_REWARDS.money,
-                rewardIndex: 0,
-            },
-            Q03_FINAL_STATE_FLAG,
-        );
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q03.xp.review-boot-history"),
+                kind: "experience",
+                amount: Q03_REWARDS.reviewBootHistory,
+            });
 
-        if (moneyGranted) {
-            Bank.transaction({
-                amount: Q03_REWARDS.money,
-                description: Q03_REPORT_SUBJECT,
-                from: {
-                    IBAN: "ID00SKYNETLOGISTICS",
-                    name: Q03_CLIENT_NAME,
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q03.xp.identify-log-gaps"),
+                kind: "experience",
+                amount: Q03_REWARDS.identifyLogGaps,
+            });
+
+            gameRuntime.reward.claim({
+                id: asId<"Reward">("entity_resolution.q03.xp.correlate-missing-records"),
+                kind: "experience",
+                amount: Q03_REWARDS.correlateMissingRecords,
+            });
+
+            if (this.Data.backupChecked) {
+                gameRuntime.reward.claim({
+                    id: asId<"Reward">("entity_resolution.q03.xp.check-backup-archive"),
+                    kind: "experience",
+                    amount: Q03_REWARDS.checkBackupArchive,
+                });
+
+                gameRuntime.reward.claim({
+                    id: asId<"Reward">("entity_resolution.q03.xp.identify-cri-policy"),
+                    kind: "experience",
+                    amount: Q03_REWARDS.identifyCriPolicy,
+                });
+            }
+
+            const moneyGranted = gameRuntime.economy.applyMissionReward(
+                {
+                    id: asId<"MissionReward">("entity_resolution.q03.money"),
+                    questId: "entity_resolution.q03",
+                    amount: Q03_REWARDS.money,
+                    rewardIndex: 0,
                 },
-            });
+                Q03_FINAL_STATE_FLAG,
+            );
+
+            if (moneyGranted) {
+                Bank.transaction({
+                    amount: Q03_REWARDS.money,
+                    description: Q03_REPORT_SUBJECT,
+                    from: {
+                        IBAN: "ID00SKYNETLOGISTICS",
+                        name: Q03_CLIENT_NAME,
+                    },
+                });
+            }
         }
 
         sendAdrianMail(`Re: ${Q03_REPORT_SUBJECT}`, Q03_COMPLETION_MAIL_CONTENT_PRODUCTION);
@@ -640,16 +640,17 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         this.completeObjective(Q03_OBJECTIVE_IDS.accessHost);
     }
 
-    private handleTerminalHydra(data: HydraResultData): void {
-        if (
-            data.ip !== this.Data.targetIp ||
-            data.credentials?.username !== Q03_SSH_USERNAME ||
-            data.credentials?.password !== Q03_SSH_PASSWORD
-        ) {
+    private handleMailRead(data: MailReadData): void {
+        if (this.Data.accessFound) {
             return;
         }
 
-        console.log("[entity_resolution.q03] Terminal.Hydra matched Q03's credentials.");
+        if (data.from !== Q03_ADRIAN_EMAIL || data.subject !== Q03_INCOMING_MAIL_SUBJECT) {
+            return;
+        }
+
+        this.SetData("accessFound", true);
+        this.completeObjective(Q03_OBJECTIVE_IDS.findAccess);
     }
 
     private handleTerminalLs(data: TerminalLsData): void {

@@ -40,27 +40,32 @@ export const Q03_ROUTER_IP = "203.0.113.1";
 // Decided 2026-09-15 (session discussion, not in the recovered source — the
 // source never specifies how the player obtains SSH access).
 //
-// REVISED 2026-09-15 after live-test: the original plan (mail carries only a
-// password HASH, player runs `john <hash>` to crack it) failed live — native
-// `john` has its own internal crack simulation, completely independent of
-// `Shell.addCommandData`/`John.DecryptHash` (confirmed: "The password could
-// not be cracked." regardless of what fixture data was registered). `john`
-// is NOT part of the SDK's typed `CommandDataMap`, unlike `hydra`, which IS
-// (`hydra: { input: { user, target }, data: { credentials: { username,
-// password } } }`) — fully controllable the same way `nmap`/`ssh` are.
+// REVISED 2026-09-16: two native-tool attempts were tried and abandoned
+// before this. First, a password HASH in the mail cracked via `john <hash>`
+// — failed live, native `john` runs its own internal crack simulation
+// completely independent of `Shell.addCommandData`/`John.DecryptHash`
+// ("The password could not be cracked." regardless of fixture data). Second,
+// mail states only the USERNAME and the player brute-forces via `hydra`
+// (which IS in the typed `CommandDataMap`, unlike `john`) — technically
+// wired correctly, but blocked by an undocumented native "Invalid wordlist
+// file." validation that rejected every wordlist tried, including one
+// containing the literal correct password. Never resolved.
 //
-// New mechanism: the mail states only the USERNAME (not sensitive on its
-// own, matching real infosec practice — usernames aren't secrets). The
-// player runs `hydra` against the SSH service to brute-force the password,
-// which the quest file wires via `Shell.addCommandData("hydra", ...)`.
+// Final mechanism: fully custom and mod-controlled, so no native engine
+// validation to fight. The incoming mail carries a `.bak` attachment
+// (Q03_ACCESS_ATTACHMENT_NAME/EXTENSION below) containing a SHA-256 hash of
+// "username:password" (Q03_ACCESS_HASH). The player runs the custom
+// `crackhash` command (commands/q03-crackhash.ts) against that hash to
+// recover both credentials — a simple fixed lookup, not a real cracker.
 export const Q03_SSH_USERNAME = "auditor";
-export const Q03_SSH_PASSWORD = "Sky-Audit-07";
+export const Q03_SSH_PASSWORD = "Kx8!rTn2Vq";
 export const Q03_SSH_PORT = 22;
-// Confirmed live 2026-09-15: native `hydra`'s usage is
-// `hydra -T [ip:port] -P [wordlist] -l [username]` — `-T` takes the combined
-// `ip:port` form, not a bare IP, so the addCommandData `target` fixture must
-// match that exact string shape.
-export const Q03_SSH_HYDRA_TARGET = `${Q03_TARGET_IP}:${Q03_SSH_PORT}`;
+
+export const Q03_ACCESS_ATTACHMENT_NAME = "old-creds";
+export const Q03_ACCESS_ATTACHMENT_EXTENSION = "bak";
+// SHA-256 of "auditor:Kx8!rTn2Vq" (Q03_SSH_USERNAME:Q03_SSH_PASSWORD).
+export const Q03_ACCESS_HASH =
+    "1b4fc73dbe8fd970afadc3731b0626752cf425944616b528f12234b923e0d5d4";
 
 // Same protocol-gating rule as Q02 (docs/phase13-quest-structure-standard.md
 // §6): port 80 stays absent so it defaults CLOSE. This matters here because
@@ -153,22 +158,17 @@ export const Q03_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     },
 };
 
-export const Q03_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = {
-    content: "DEV REPLAY — Q03 live-testing fixture. Apply to replay MISSING LOGS.",
-    author: {
-        name: "Adrian Cole [DEV]",
-        avatar: "assets/adrian-cole.png",
-    },
-};
-
 export const Q03_INCOMING_MAIL_SUBJECT = "Re: edge-03";
 
 // Exact locked wording from the source's "Opening" section, reproduced
-// verbatim, with one addition: an "Account:" line carrying ONLY the SSH
-// username (never the password — see Q03_SSH_PASSWORD's revised comment
-// above), inserted before the closing "Don't touch anything else." line —
-// matching Adrian's established terse `Label: value` voice (same style as
-// Q02's `Host: ${Q02_WEB_HOST}`).
+// verbatim, with one addition: a short line noting the attached access
+// backup (REVISED 2026-09-16 — replaces an earlier "Account:"
+// username-only line; see Q03_SSH_PASSWORD's comment above for the full
+// credential-delivery history), inserted before the closing "Don't touch
+// anything else." line — matching Adrian's established terse `Label: value`
+// voice (same style as Q02's `Host: ${Q02_WEB_HOST}`). The actual attachment
+// (Q03_ACCESS_ATTACHMENT_NAME/EXTENSION, Q03_ACCESS_HASH above) is wired at
+// the sendAdrianMail call site in q03-quest.ts, not embedded in this text.
 export const Q03_INCOMING_MAIL_CONTENT = [
     "The client got back to me.",
     "",
@@ -183,7 +183,7 @@ export const Q03_INCOMING_MAIL_CONTENT = [
     "Can you pull the server history and check when it",
     "was last used?",
     "",
-    `Account: ${Q03_SSH_USERNAME}`,
+    "Old access backup attached.",
     "",
     "Don't touch anything else.",
     "",
@@ -219,16 +219,6 @@ export const Q03_COMPLETION_MAIL_CONTENT_PRODUCTION = [
     "— Adrian",
 ].join("\n");
 
-export const Q03_COMPLETION_MAIL_CONTENT_REPLAY = [
-    "You couldn't confirm it, and neither can I right now.",
-    "",
-    "Leave it here for the moment.",
-    "",
-    "DEV replay complete.",
-    "",
-    "— Adrian",
-].join("\n");
-
 // Must outlast the phone call itself — `finishReportFindings()` (in
 // q03-quest.ts) is called immediately when the call starts, decoupled from
 // the call's own lifecycle (function properties on Dialog entries were
@@ -252,7 +242,14 @@ export const Q03_CRI_POLICY_FOUND_FLAG = "entity_resolution.q03.cri_policy_found
 // requiring BOTH `filestat` and `bootlog`) was split into two separate
 // objectives — `checkTimestamp` and `reviewBootHistory` — each completing
 // independently on its own command, for more granular progress feedback.
+//
+// ADDED 2026-09-16: `findAccess` (id "q03.objective.00", intentionally
+// numbered before `accessHost`'s "01" rather than renumbering everything
+// else) — the credential-delivery redesign above needed a real gameplay
+// step for "the player has read the mail and has the access hash," ungated
+// by any reward, before `accessHost` can unlock.
 export const Q03_OBJECTIVE_IDS = {
+    findAccess: "q03.objective.00",
     accessHost: "q03.objective.01",
     checkLogs: "q03.objective.02",
     checkTimestamp: "q03.objective.03",
@@ -270,9 +267,14 @@ export const Q03_OBJECTIVE_IDS = {
 // bonus clue tool.
 export const Q03_OBJECTIVES = [
     {
+        name: Q03_OBJECTIVE_IDS.findAccess,
+        description: "Dig up the SSH credentials",
+    },
+    {
         name: Q03_OBJECTIVE_IDS.accessHost,
         description: "Access the remote host",
         terminalCommand: "ssh",
+        unlocksAfter: [Q03_OBJECTIVE_IDS.findAccess],
     },
     {
         name: Q03_OBJECTIVE_IDS.checkLogs,
@@ -311,13 +313,6 @@ export const Q03_OBJECTIVES = [
         unlocksAfter: [Q03_OBJECTIVE_IDS.checkGatewayLogs],
     },
 ];
-
-// The §7 QA-shortcut pattern, available starting Q03 (Q02 was already
-// FINAL LOCK when that standard was written, so it kept real gating in
-// replay too — see tests/phase13-q02-content.test.ts's note on this).
-export const Q03_REPLAY_OBJECTIVES = Q03_OBJECTIVES.map(
-    ({ unlocksAfter: _unlocksAfter, ...objective }) => objective,
-);
 
 // Reward categories per the recovered Phase 8 economy lock (80 XP
 // mandatory, 100 XP max, $300 mandatory-only). `analyzeLogRotation`'s 20 XP

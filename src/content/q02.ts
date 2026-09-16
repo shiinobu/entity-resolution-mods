@@ -121,14 +121,6 @@ export const Q02_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     },
 };
 
-export const Q02_HACKHUB_POST_REPLAY: QuestHackhubPostDefinition = {
-    content: "DEV REPLAY — Q02 live-testing fixture. Apply to replay THE ANOMALY.",
-    author: {
-        name: "Adrian Cole [DEV]",
-        avatar: "assets/adrian-cole.png",
-    },
-};
-
 export const Q02_INCOMING_MAIL_SUBJECT = "Quick follow-up";
 
 export const Q02_INCOMING_MAIL_CONTENT = [
@@ -153,24 +145,12 @@ export const Q02_HOLD_MAIL_CONTENT = [
     "— Adrian",
 ].join("\n");
 
-// Two named variants (not one shared constant) since the wording genuinely
-// differs: production mentions the real money reward, replay does not.
 export const Q02_COMPLETION_MAIL_CONTENT_PRODUCTION = [
     "Good catch. I'll handle it from here.",
     "",
     "And don't run another scan on that host.",
     "",
     "Payment's on the way.",
-    "",
-    "— Adrian",
-].join("\n");
-
-export const Q02_COMPLETION_MAIL_CONTENT_REPLAY = [
-    "Good catch. I'll handle it from here.",
-    "",
-    "And don't run another scan on that host.",
-    "",
-    "DEV replay complete.",
     "",
     "— Adrian",
 ].join("\n");
