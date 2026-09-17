@@ -268,6 +268,14 @@ expected field values against named constants shared with the freehand
 template. Not reattempted with `apiVersion: 2` — kept as a possible future
 revisit if the compatibility-mode behavior ever needs to go away.
 
+The template's free-text fields (a date, a list of numbers) have no single
+natural format a player would type — "Sep 8" vs "sep 08" vs "September 08";
+"5, 6" vs "5,6" vs "6, 5" — so exact-string comparison would reject valid
+answers. `monthDayMatches`/`numberSetsMatch`
+(`src/infrastructure/hackhub/commands/q03-log-tools.ts`) normalize both
+sides (canonical `Mon DD`; sorted digit set) before comparing, tolerating
+wording/order/spacing variance without accepting a wrong answer.
+
 ---
 
 ## 10. Terminal rendering: collapsed whitespace and table width
@@ -414,6 +422,134 @@ intended — an event-handler placement mistake, not an SDK issue.
 
 **Fix:** moved the send call into the `Mail.Sent` handler, at the exact
 point where the report is detected and Objective 05 completes.
+
+---
+
+## 18. `Network.createSubnetNetwork` needs a Router-wrapping-child-Device shape for SSH
+
+**Status: RESOLVED**
+Found: Q03, 2026-09-15.
+
+A bare top-level `Device`, and a top-level `Router` with `users`/`ports`
+declared directly on it (no child), both failed to accept SSH connections
+live (`"Connection to the remote server could not be established."`) — even
+though the SDK docs describe `createSubnetNetwork` as producing "a full
+subnet network (Router with children hierarchy)."
+
+**Fix:** always give the Router a separate IP and put the actual
+SSH-reachable `Device` (with its `ports`/`users`/`rootFiles`) as that
+Router's **child**, matching the shape the SSH probe used when it worked.
+When the player-facing IP must stay a specific value (e.g. reused across
+quests), the Router gets its own never-mentioned wrapper IP instead, and
+the child Device keeps the real target IP — purely structural, invisible to
+the player.
+
+---
+
+## 19. Stale `nmap` fixture leaks across quests sharing the same target IP
+
+**Status: RESOLVED**
+Found: Q03, 2026-09-15.
+
+`nmap`'s displayed result comes entirely from the `Shell.addCommandData`
+fixture registered for that exact IP — it does not automatically reset
+between quests. Q03 reuses Q02's target IP (`edge-03`, same host), and
+without Q03 registering its own fresh fixture for that IP, `nmap` kept
+showing **Q02's stale result** (port 22 CLOSE) instead of Q03's (port 22
+OPEN) — nothing had cleared Q02's entry.
+
+**Fix:** any quest reusing a previous quest's target IP must explicitly
+re-register (or clear-then-register) its own `nmap` fixture for that IP in
+`OnObjectivesStart`, never assume the previous quest cleaned up after
+itself.
+
+---
+
+## 20. Native `cat` cannot read a `.gz`-extension file at all
+
+**Status: RESOLVED (design constraint, not a bug)**
+Found: Q03, 2026-09-15.
+
+Native `cat` refuses to open any file with a `.gz` extension
+(`"Unable to read file."`), regardless of its actual text content — this is
+why `zgrep` exists as a tool in the first place (searching `.gz` content
+without `cat`-ing it directly).
+
+**Fix/implication:** any fixture file meant to be `cat`-able directly (e.g.
+Q03's backup archive metadata, framed narratively as a `.tar.gz`) must use
+a real non-`.gz` extension (Q03 uses `.txt`, with the `.tar.gz` framing
+preserved only inside the file's own `archive: ...` header text) — the
+extension the player literally reads via `cat` and the extension the
+narrative *describes* the file as don't have to match.
+
+---
+
+## 21. `Shell.addCommandData` fixtures don't survive a HackHub restart
+
+**Status: RESOLVED**
+Found: Q03, 2026-09-15 (third pass).
+
+Like `nmap`/`hydra`, an `ssh` fixture registered via `Shell.addCommandData`
+does not persist across a game restart. `OnStart` runs exactly once, ever,
+per claim — registering the fixture there (as an early revision did) meant
+it was never re-registered on subsequent restarts of an already-claimed
+quest, so SSH connections failed again after every restart despite working
+right after the initial claim.
+
+**Fix:** register (and defensively clear-then-register) all `Shell`
+fixtures in `OnObjectivesStart`, never `OnStart` — the SDK's own `Quest`
+base class doc comment confirms `OnObjectivesStart` runs "once on claim AND
+again every time the game starts," which `OnStart` does not.
+
+---
+
+## 22. `await` before `Network.createSubnetNetwork` loses mod context
+
+**Status: RESOLVED**
+Found: Q03, 2026-09-15.
+
+Awaiting anything (even an unrelated `Network.destroyNetwork` call) before
+calling `Network.createSubnetNetwork` in the same handler makes the engine
+lose track of which mod is calling across the async boundary — the create
+call then fails with
+`[ContentSDK] Mod "null" tried to use Network.createSubnetNetwork without
+"network" permission`, even though the manifest correctly declares that
+permission.
+
+**Fix:** keep `OnStart` fully synchronous — fire-and-forget any
+`Network.destroyNetwork` cleanup call (don't `await` it) before creating the
+real network. This is safe: `OnComplete`/`OnAbandon` already call
+`destroyNetwork` the same fire-and-forget way. Related: don't call
+`destroyNetwork` on a network you're about to immediately re-create at the
+same address either — a destroy-then-immediately-create race against the
+engine's own (non-instant) async teardown of a genuinely present network
+can make the fresh create fail too; only clean up addresses that might be
+orphaned from a *different* source (e.g. a previous quest reusing the same
+IP), never the one you're about to rebuild yourself in the same call.
+
+---
+
+## 23. `Network.destroyNetwork` takes the Router's IP, not a child Device's IP
+
+**Status: RESOLVED (API usage note)**
+Found: Q03, 2026-09-15.
+
+For a Router-with-child-Device network shape (see entry 18),
+`Network.destroyNetwork(ip)` must be called with the **Router's** IP to tear
+down the whole hierarchy, including its children — calling it with a child
+Device's IP does not work.
+
+---
+
+## 24. `Terminal.SSH.Connected`'s payload is a bare IP string, not an object
+
+**Status: RESOLVED (undocumented/deprecated-interface gotcha)**
+Found: Q03, 2026-09-15.
+
+The event fires with a plain string (the connected IP), not an object —
+the SDK's own `SSHConnectedEvent` interface is marked `@deprecated` for
+exactly this reason. Destructuring the payload as if it were an object
+fails silently wrong; treat it as a plain string.
 
 ---
 

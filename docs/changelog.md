@@ -148,3 +148,53 @@ for unbuilt quests).
   `src/infrastructure/hackhub/q03-quest.ts` is 834 lines, over the
   project's own 800-line soft ceiling — flagged as a split candidate, not
   yet acted on.
+- **New `docs/blueprint-vs-built.html`**: a standalone reference page
+  comparing three architectures using Q03's real code as the test case —
+  the original Phase 9 SDK blueprint (sketch), a full fictional
+  implementation of that blueprint using its real quoted interfaces
+  (`QuestDefinition`, `QuestService`, `EventBus`, etc., fake `QX` quest
+  data), and the architecture that actually shipped Q01-Q03. Conclusion:
+  keep the current architecture — already proven, and the blueprint's
+  `EventBus`/`quests/` gaps don't disappear even in a full implementation.
+- **`q03-quest.ts` split (834 → 692 lines)**: the phone-call `Dialog` tree
+  (pure narrative data, ~130 lines) moved to `content/q03.ts` as
+  `Q03_DIALOG`, and the `withDialogLineReadTap` SDK-bug-workaround Proxy
+  (~25 lines, not Q03-specific) moved to a new shared
+  `infrastructure/hackhub/dialog-utils.ts` for reuse by every future
+  dialogue quest (Q08, Q09, Q11-Q16). `implementation-rules.md` §1 updated
+  so this doesn't get missed again. One test (`tests/q03.test.ts`'s
+  never-say-"deleted" narrative-constraint check) had to be narrowed to
+  exclude the `Q03_DIALOG` block, since it now legitimately contains the
+  player's own rejected theory ("I think someone removed the logs.") —
+  typecheck clean, 230/230 tests pass.
+- **Deduplicated repetitive `gameRuntime.reward.claim({id, kind, amount})`
+  calls in Q01/Q02/Q03's `OnComplete`**: each quest's reward block had
+  4-7 near-identical calls differing only in the id suffix and amount.
+  Replaced with one small local `claimXp(suffix, amount)` closure per
+  quest file (not shared across quests — the id-prefix convention only
+  needs to hold within one quest). Q01 470 lines, Q02 443 lines, Q03 671
+  lines (down from 480/463/692). Behavior unchanged — same ids, same
+  amounts, same order; typecheck clean, 230/230 tests pass. The `isDev`
+  checks were reviewed too and left as-is: exactly the three gates
+  `implementation-rules.md` §7 specifies (`QuestsToComplete`,
+  `applyDevGating`, the reward block), not actually duplicated.
+- **Q03 FINAL LOCK comment/console.log cleanup**: every comment and
+  `console.log` call in `content/q03.ts`, `content/q03-filesystem.ts`,
+  `infrastructure/hackhub/q03-quest.ts`, and the five
+  `infrastructure/hackhub/commands/q03-*.ts` files was audited, then
+  removed — the code is now fully comment-free. Nothing was lost: 7 new
+  `bugs.md` entries (18-24, plus an amendment to entry 9) and 2 new
+  `source-current.md` paragraphs captured everything genuinely useful that
+  a stripped comment used to explain. One real bug caught mid-cleanup: a
+  file rewrite briefly replaced the U+00A0 non-breaking-space characters
+  `renderAsciiTable`/`formatSearchMatches` depend on (bugs.md entry 10)
+  with plain spaces, breaking 3 tests — restored, 230/230 pass again. Also
+  removed Q03's `withDialogLineReadTap` Proxy wrapper from its shipped
+  `Dialog` field — it was diagnostic-only (not part of the actual
+  `onEnd`/`onSelect` fix, bugs.md entry 1) and the utility itself stays in
+  `dialog-utils.ts` for future dialogue quests. New mandatory rules written
+  into `implementation-rules.md` §11 (strip comments to permanent docs once
+  a quest reaches FINAL LOCK) and §12 (all future diagnostic tracing goes
+  through `infrastructure/hackhub/logger.ts`'s `trace()`, never raw
+  `console.log`) — applies going forward to Q04-Q16, not retroactively to
+  Q01/Q02.

@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint vs Built</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0b;
+    --bg-raised: #10160f;
+    --bg-inset: #0d120c;
+    --line: #1e2a1c;
+    --line-strong: #2c3d29;
+    --text: #d9e6d4;
+    --text-dim: #8ba382;
+    --text-faint: #5a6e55;
+    --accent: #4ade80;
+    --accent-dim: #2f6b46;
+    --old: #f0a058;
+    --old-dim: #6b4a26;
+    --new: #4ade80;
+    --full: #38bdf8;
+    --full-dim: #1c5a78;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace;
+    --sans: "IBM Plex Sans", -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 16px;
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-block: 48px 80px;
+  }
+
+  header.top {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(28px, 5vw, 42px);
+    line-height: 1.15;
+    margin: 0 0 16px;
+    text-wrap: balance;
+    color: #eef7ea;
+  }
+
+  .lede {
+    color: var(--text-dim);
+    font-size: 17px;
+    max-width: 62ch;
+    margin: 0 0 24px;
+  }
+
+  .stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+  }
+
+  .stat {
+    font-family: var(--mono);
+  }
+
+  .stat .n {
+    font-size: 26px;
+    color: var(--accent);
+    display: block;
+  }
+
+  .stat .l {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  section {
+    margin-bottom: 56px;
+  }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: 22px;
+    color: #eef7ea;
+    border-left: 3px solid var(--accent);
+    padding-left: 14px;
+    margin: 0 0 8px;
+  }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 15px;
+    margin: 28px 0 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .section-note {
+    color: var(--text-dim);
+    max-width: 68ch;
+    margin: 0 0 20px;
+  }
+
+  code, .mono {
+    font-family: var(--mono);
+  }
+
+  p code, li code {
+    background: var(--bg-inset);
+    border: 1px solid var(--line);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: var(--accent);
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 760px) {
+    .split { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-top-width: 3px;
+    padding: 18px 18px 20px;
+    min-width: 0;
+  }
+
+  .panel.old { border-top-color: var(--old); }
+  .panel.new { border-top-color: var(--new); }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+  }
+
+  .tag.old { color: var(--old); border: 1px solid var(--old-dim); }
+  .tag.new { color: var(--new); border: 1px solid var(--accent-dim); }
+
+  .panel-head h4 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  pre .dim { color: var(--text-faint); }
+  pre .hl { color: var(--accent); }
+  pre .hl2 { color: var(--old); }
+  pre .cmt { color: var(--text-faint); font-style: italic; }
+
+  .invented {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--old);
+    border: 1px dashed var(--old-dim);
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .callout {
+    background: var(--bg-inset);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 14.5px;
+    color: var(--text-dim);
+  }
+
+  .callout strong { color: var(--text); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .table-wrap { overflow-x: auto; }
+
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+
+  td.old-col { color: var(--old); }
+  td.new-col { color: var(--new); }
+  td.full-col { color: var(--full); }
+  td.crit { color: var(--text); font-family: var(--mono); font-size: 13px; }
+
+  .verdict {
+    background: linear-gradient(180deg, var(--bg-raised), var(--bg-inset));
+    border: 1px solid var(--line-strong);
+    border-left: 4px solid var(--accent);
+    padding: 28px 28px 30px;
+  }
+
+  .verdict h2 { border: none; padding: 0; margin-bottom: 6px; }
+
+  .verdict .verdict-line {
+    font-family: var(--mono);
+    font-size: 19px;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+
+  .verdict ol {
+    margin: 0;
+    padding-left: 22px;
+  }
+
+  .verdict li {
+    margin-bottom: 12px;
+    color: var(--text-dim);
+  }
+
+  .verdict li strong { color: var(--text); }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--text-faint);
+    font-size: 12.5px;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">entity-resolution-mods — architecture note</p>
+    <h1>Blueprint vs Built</h1>
+    <p class="lede">
+      Q03 (MISSING LOGS) sudah live-tested dan FINAL LOCK. Ini perbandingan
+      tiga arah: sketsa cetak biru asli dari dokumen desain Phase&nbsp;9,
+      implementasi penuhnya (interface asli, data fiktif), dan arsitektur
+      yang benar-benar dipakai untuk membangun Q01–Q03.
+    </p>
+    <div class="stat-row">
+      <div class="stat"><span class="n">1,956</span><span class="l">baris kode Q03 nyata</span></div>
+      <div class="stat"><span class="n">6</span><span class="l">file baru buat 1 quest fiktif di blueprint</span></div>
+      <div class="stat"><span class="n">0</span><span class="l">baris "content/" di blueprint asli</span></div>
+      <div class="stat"><span class="n">3</span><span class="l">quest FINAL LOCK di atas arsitektur baru</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Inventaris Q03 (data asli)</h2>
+    <p class="section-note">
+      Ini bukan contoh reka-reka — file, baris, dan cuplikan kode di bawah
+      diambil langsung dari <code>src/</code> hari ini.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>File</th><th>Baris</th><th>Isi</th></tr>
+        <tr><td class="crit">content/q03.ts</td><td>345</td><td>Target IP, kredensial SSH, teks mail, objective, reward, nama flag, objek <code>Quest</code></td></tr>
+        <tr><td class="crit">content/q03-filesystem.ts</td><td>193</td><td>Fixture /var/log, /var/backups, boot history</td></tr>
+        <tr><td class="crit">infrastructure/hackhub/q03-quest.ts</td><td>834</td><td>Adapter @RegisterQuest — OnStart/OnObjectivesStart/OnComplete/OnAbandon</td></tr>
+        <tr><td class="crit">commands/q03-crackhash.ts</td><td>44</td><td>Command custom: cari kredensial dari hash</td></tr>
+        <tr><td class="crit">commands/q03-filestat.ts</td><td>54</td><td>Command custom: metadata file</td></tr>
+        <tr><td class="crit">commands/q03-bootlog.ts</td><td>40</td><td>Command custom: riwayat boot</td></tr>
+        <tr><td class="crit">commands/q03-zgrep.ts</td><td>94</td><td>Command custom: cari string di .gz</td></tr>
+        <tr><td class="crit">commands/q03-log-tools.ts</td><td>352</td><td>Helper bersama (word-wrap, tabel ASCII)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tempat data konkret Q03 hidup</h2>
+    <p class="section-note">
+      Struktur folder yang sama, diisi konten Q03 yang sama persis. Kolom
+      kanan (BUILT) adalah yang benar-benar dipakai sekarang.
+    </p>
+    <div class="split">
+      <div class="panel old">
+        <div class="panel-head">
+          <h4>Phase 9 §9.1.3 — cetak biru asli</h4>
+          <span class="tag old">Blueprint</span>
+        </div>
+        <pre>src/
+├── core/ids/                 <span class="cmt">brand.ts equivalent</span>
+├── domain/
+│   ├── quest/
+│   │   ├── Quest.ts
+│   │   ├── QuestObjective.ts
+│   │   └── QuestRuntime.ts
+│   └── economy/               <span class="cmt">(satu2nya domain di daftar asli
+│                               yang relevan buat Q03)</span>
+├── quests/<span class="invented">TIDAK ADA DI BLUEPRINT</span>
+│   └── q03/
+│       ├── definition.ts      <span class="cmt">objectives, Quest instance</span>
+│       ├── credentials.ts     <span class="cmt">SSH_USERNAME/PASSWORD, hash</span>
+│       ├── mail.ts            <span class="cmt">teks mail masuk/keluar</span>
+│       └── filesystem.ts      <span class="cmt">fixture /var/log, /var/backups</span>
+├── state/
+│   ├── flags/
+│   ├── runtime/
+│   └── snapshots/
+├── application/
+│   ├── commands/
+│   │   ├── CompleteQuestCommand.ts
+│   │   ├── ClaimRewardCommand.ts
+│   │   └── ApplyMissionRewardCommand.ts
+│   ├── queries/                <span class="cmt">nyaris kosong — Q03 nyaris
+│   │                            semua-tulis, gak butuh query terpisah</span>
+│   └── services/
+└── infrastructure/
+    ├── persistence/
+    ├── storage/
+    └── adapters/hackhub/<span class="invented">TIDAK ADA DI BLUEPRINT</span>
+        ├── Q03QuestAdapter.ts
+        └── commands/
+            ├── CrackhashCommand.ts
+            ├── FilestatCommand.ts
+            ├── BootlogCommand.ts
+            ├── ZgrepCommand.ts
+            └── LogToolsHelpers.ts</pre>
+      </div>
+      <div class="panel new">
+        <div class="panel-head">
+          <h4>Arsitektur aktual — sudah live Q01-Q03</h4>
+          <span class="tag new">Built</span>
+        </div>
+        <pre>src/
+├── core/
+│   └── brand.ts
+├── domain/
+│   ├── quest/
+│   │   ├── quest.ts
+│   │   ├── quest-objective.ts
+│   │   └── quest-state.ts
+│   └── shared/
+│       ├── condition.ts
+│       └── condition-evaluator.ts
+├── state/
+│   ├── state-store.ts
+│   ├── flag-store.ts
+│   └── domain-state-access.ts + 4 lainnya
+├── application/
+│   ├── quest-service.ts
+│   ├── reward-service.ts
+│   ├── economy-service.ts
+│   └── game-runtime.ts        <span class="cmt">composition root</span>
+├── content/
+│   ├── q03.ts                 <span class="hl">345 baris, 1 file</span>
+│   └── q03-filesystem.ts      <span class="hl">193 baris, 1 file</span>
+└── infrastructure/hackhub/
+    ├── runtime.ts
+    ├── q03-quest.ts            <span class="hl">834 baris, 1 file</span>
+    └── commands/
+        ├── q03-crackhash.ts
+        ├── q03-filestat.ts
+        ├── q03-bootlog.ts
+        ├── q03-zgrep.ts
+        └── q03-log-tools.ts</pre>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Kenapa kolom kiri butuh 4 file cuma buat ganti 1 file
+      (<code>content/q03.ts</code>)?</strong> Karena blueprint asli sama
+      sekali tidak punya folder buat "data konkret satu quest" — domain/
+      cuma buat bentuk/tipe generik. Kredensial, teks mail, dan fixture
+      filesystem Q03 terpaksa dipecah manual ke file terpisah supaya tetap
+      masuk akal, dan folder <code>quests/</code> itu sendiri saya
+      <em>ciptakan</em> — bukan hasil baca dokumen, karena dokumennya
+      memang tidak menyediakan tempat untuk ini.
+    </div>
+  </section>
+
+  <section>
+    <h2>Cuplikan nyata: reward Q03 di<code>OnComplete()</code></h2>
+    <p class="section-note">
+      Kiri: kalau CQRS (<code>application/commands</code>) dari blueprint
+      diikuti apa adanya. Kanan: kode Q03 yang benar-benar jalan hari ini.
+    </p>
+    <div class="split">
+      <div class="panel old">
+        <div class="panel-head"><h4>Command class per operasi</h4><span class="tag old">Blueprint</span></div>
+        <pre>new ClaimRewardCommand(rewardService)
+  .execute({
+    id: rewardId(
+      "entity_resolution.q03.xp." +
+      "investigate-server-history"
+    ),
+    kind: "experience",
+    amount: Q03_REWARDS
+      .investigateServerHistory,
+  });
+
+<span class="cmt">// ...diulang 6x lagi buat tiap</span>
+<span class="cmt">// baris reward XP Q03</span>
+
+new ApplyMissionRewardCommand(
+  economyService
+).execute(
+  {
+    id: missionRewardId(
+      "entity_resolution.q03.money"
+    ),
+    questId: questId(
+      "entity_resolution.q03"
+    ),
+    amount: Q03_REWARDS.money,
+    rewardIndex: 0,
+  },
+  Q03_FINAL_STATE_FLAG,
+);</pre>
+      </div>
+      <div class="panel new">
+        <div class="panel-head"><h4>Panggilan service langsung</h4><span class="tag new">Built (nyata)</span></div>
+        <pre>gameRuntime.reward.claim({
+  id: asId&lt;"Reward"&gt;(
+    "entity_resolution.q03.xp." +
+    "investigate-server-history"
+  ),
+  kind: "experience",
+  amount: Q03_REWARDS
+    .investigateServerHistory,
+});
+
+<span class="cmt">// ...diulang 6x lagi, sama</span>
+<span class="cmt">// persis polanya</span>
+
+const moneyGranted =
+  gameRuntime.economy
+    .applyMissionReward(
+      {
+        id: asId&lt;"MissionReward"&gt;(
+          "entity_resolution.q03.money"
+        ),
+        questId:
+          "entity_resolution.q03",
+        amount: Q03_REWARDS.money,
+        rewardIndex: 0,
+      },
+      Q03_FINAL_STATE_FLAG,
+    );</pre>
+      </div>
+    </div>
+    <p class="section-note">
+      Isinya nyaris identik — bedanya cuma satu lapis pembungkus Command
+      class yang tidak menambah kemampuan apa pun di sini, karena Q03
+      tidak punya command queue, tidak ada multi-client, tidak ada undo.
+    </p>
+  </section>
+
+  <section>
+    <h2>Implementasi penuh blueprint (data fiktif)</h2>
+    <div class="callout">
+      <strong>Koreksi dari bagian sebelumnya:</strong> waktu digali lebih
+      dalam ke interface asli dokumen Phase&nbsp;9 (bukan cuma nama folder
+      <code>application/commands</code>), ternyata <code>QuestService</code>
+      resminya (§9.3.20) itu <strong>satu interface kohesif</strong> —
+      <code>startQuest</code>, <code>completeQuest</code>,
+      <code>startObjective</code>, <code>completeObjective</code>, semuanya
+      balikin <code>Result&lt;T, SDKError&gt;</code> — bukan satu Command
+      class terpisah per operasi seperti dugaan awal saya. Jadi versi penuh
+      di bawah ini lebih akurat dari sketsa folder sebelumnya. Semua
+      interface di bawah dikutip persis dari dokumen sumber; datanya
+      (<code>QX</code>, "THE PLACEHOLDER") murni fiktif, bukan Q03.
+    </div>
+
+    <h3>Struktur file (fake quest "QX", lewat SDK asli)</h3>
+    <pre style="background:var(--bg-inset);border:1px solid var(--line);padding:16px;">src/
+├── core/
+│   ├── ids/index.ts        <span class="cmt">QuestId, ObjectiveId + helper</span>
+│   ├── result/index.ts     <span class="cmt">Result&lt;T, E&gt;</span>
+│   ├── errors/index.ts     <span class="cmt">SDKErrorCode, SDKError</span>
+│   └── events/index.ts     <span class="cmt">GameEventMap, EventBus</span>
+├── domain/quest/
+│   └── QuestDefinition.ts  <span class="cmt">Objective*, QuestReward, dst.</span>
+├── quests/qx/
+│   └── definition.ts       <span class="hl2">QX_DEFINITION — FIKTIF</span>
+├── application/services/
+│   └── QuestService.ts     <span class="cmt">interface §9.3.20 + impl in-memory</span>
+└── infrastructure/adapters/hackhub/
+    └── QxQuestAdapter.ts   <span class="cmt">wiring @RegisterQuest fiktif</span></pre>
+
+    <h3>core/ids, core/result, core/errors — dikutip persis dari dokumen</h3>
+    <pre style="background:var(--bg-inset);border:1px solid var(--line);padding:16px;overflow-x:auto;"><span class="cmt">// core/ids/index.ts</span>
+export type QuestId = string &amp; { readonly __brand: "QuestId" };
+export type ObjectiveId = string &amp; { readonly __brand: "ObjectiveId" };
+
+export function questId(value: string): QuestId {
+  return value as QuestId;
+}
+export function objectiveId(value: string): ObjectiveId {
+  return value as ObjectiveId;
+}
+
+<span class="cmt">// core/result/index.ts</span>
+export type Result&lt;T, E&gt; =
+  | { success: true; data: T }
+  | { success: false; error: E };
+
+<span class="cmt">// core/errors/index.ts</span>
+export type SDKErrorCode =
+  | "NOT_FOUND" | "INVALID_STATE" | "INVALID_INPUT"
+  | "PRECONDITION_FAILED" | "PERMISSION_DENIED"
+  | "ALREADY_COMPLETED" | "ALREADY_EXISTS" | "NOT_AVAILABLE";
+
+export interface SDKError {
+  type: SDKErrorCode;
+  message: string;
+}</pre>
+
+    <h3>domain/quest/QuestDefinition.ts — dikutip persis (§9.3.4–9.3.7)</h3>
+    <pre style="background:var(--bg-inset);border:1px solid var(--line);padding:16px;overflow-x:auto;">export interface QuestDefinition {
+  readonly id: QuestId;
+  readonly title: string;
+  readonly description?: string;
+  readonly prerequisites: readonly Condition[];
+  readonly objectives: readonly ObjectiveDefinition[];
+  readonly rewards: readonly QuestReward[];
+  readonly completion: QuestCompletionRule;
+}
+
+export interface ObjectiveDefinition {
+  readonly id: ObjectiveId;
+  readonly type: ObjectiveType;
+  readonly title: string;
+  readonly description?: string;
+  readonly prerequisites?: readonly Condition[];
+  readonly completion: ObjectiveCompletionRule;
+}
+
+<span class="cmt">// Baseline types — sengaja generik, dokumen eksplisit menolak
+// bikin Q01Objective/Q02Objective/Q03Objective ("terlalu quest-specific")</span>
+export type ObjectiveType =
+  | "INTERACT" | "INVESTIGATE" | "COLLECT" | "INSPECT"
+  | "SEARCH" | "TALK" | "QUERY_DATABASE" | "HACK"
+  | "VERIFY" | "UNLOCK" | "FOLLOW" | "DECIDE";
+
+export type ObjectiveStatus =
+  | "LOCKED" | "AVAILABLE" | "ACTIVE"
+  | "COMPLETED" | "FAILED" | "SKIPPED";</pre>
+
+    <h3>application/services/QuestService.ts — interface asli (§9.3.20) + implementasi fiktif</h3>
+    <pre style="background:var(--bg-inset);border:1px solid var(--line);padding:16px;overflow-x:auto;"><span class="cmt">// interface-nya, dikutip persis — SATU service, bukan command per method</span>
+export interface QuestService {
+  getQuest(id: QuestId): QuestState | undefined;
+  getDefinition(id: QuestId): QuestDefinition | undefined;
+  getActiveQuests(): readonly QuestState[];
+  getAvailableQuests(): readonly QuestState[];
+  startQuest(id: QuestId): Result&lt;void, SDKError&gt;;
+  completeQuest(id: QuestId): Result&lt;void, SDKError&gt;;
+  failQuest(id: QuestId): Result&lt;void, SDKError&gt;;
+  startObjective(questId: QuestId, objectiveId: ObjectiveId): Result&lt;void, SDKError&gt;;
+  completeObjective(questId: QuestId, objectiveId: ObjectiveId): Result&lt;void, SDKError&gt;;
+}
+
+<span class="cmt">// implementasi fiktif buat contoh — pola ini TIDAK ada di dokumen,
+// tapi wajar diturunkan dari interface + EventBus di atas</span>
+class InMemoryQuestService implements QuestService {
+  constructor(
+    private readonly registry: QuestRegistry,
+    private readonly eventBus: EventBus,
+  ) {}
+
+  completeQuest(id: QuestId): Result&lt;void, SDKError&gt; {
+    const definition = this.registry.get(id);
+    if (!definition) {
+      return { success: false, error: { type: "NOT_FOUND", message: `Quest ${id} not found` } };
+    }
+    <span class="cmt">// ...validasi objective, update QuestState...</span>
+    this.eventBus.emit("quest.completed", { questId: id });
+    return { success: true, data: undefined };
+  }
+  <span class="cmt">// getQuest / startQuest / startObjective / completeObjective: pola serupa</span>
+}</pre>
+
+    <h3>quests/qx/definition.ts — FIKTIF, bukan Q03</h3>
+    <pre style="background:var(--bg-inset);border:1px solid var(--line);padding:16px;overflow-x:auto;">import { questId, objectiveId } from "../../core/ids/index.js";
+import type { QuestDefinition } from "../../domain/quest/QuestDefinition.js";
+
+<span class="hl2">// Semua nilai di bawah ini KARANGAN untuk contoh — bukan data Q03 asli.</span>
+export const QX_DEFINITION: QuestDefinition = {
+  id: questId("example.qx"),
+  title: "THE PLACEHOLDER",
+  description: "Fabricated example quest — not real story content.",
+  prerequisites: [],
+  objectives: [
+    {
+      id: objectiveId("qx.findPlaceholder"),
+      type: "INVESTIGATE",
+      title: "Find the placeholder file",
+      completion: { type: "EVENT", eventType: "objective.completed" },
+    },
+  ],
+  rewards: [
+    { kind: "EXPERIENCE", amount: 25 },
+    { kind: "MONEY", amount: 100 },
+  ],
+  completion: { type: "ALL_OBJECTIVES" },
+};</pre>
+
+    <h3>infrastructure/adapters/hackhub/QxQuestAdapter.ts — wiring fiktif</h3>
+    <pre style="background:var(--bg-inset);border:1px solid var(--line);padding:16px;overflow-x:auto;">override OnComplete() {
+  const result = questService.completeQuest(QX_DEFINITION.id);
+  if (!result.success) {
+    <span class="cmt">// SDKError dari Result, bukan throw langsung —
+    // beda gaya dari q03-quest.ts yang throw Error polos</span>
+    throw new Error(result.error.message);
+  }
+  <span class="cmt">// reward/economy: sama saja lewat service, tidak ada Command class</span>
+}</pre>
+
+    <p class="section-note">
+      Hasilnya: begitu diimplementasikan penuh pakai interface asli
+      (bukan cuma nama folder), bentuknya <strong>jauh lebih mirip</strong>
+      arsitektur yang sekarang jalan daripada kesan "CQRS berat" di sketsa
+      awal. Tapi tetap ada 3 biaya nyata yang tidak hilang: (1)
+      <code>content/</code> tetap tidak ada — folder <code>quests/</code>
+      tetap harus dikarang sendiri; (2) primitif inti (<code>Result</code>,
+      <code>SDKError</code>, <code>EventBus</code>) harus dibangun dari nol
+      — proyek sekarang sudah punya versi sendiri yang lebih ringkas
+      (<code>core/result.ts</code> 13 baris, tanpa error-code enum
+      terpisah); (3) <code>EventBus</code> generik seperti ini tidak pernah
+      dipakai proyek sekarang — HackHub SDK <em>sendiri</em> sudah jadi
+      event bus (<code>Terminal.Command</code>, <code>Mail.Sent</code>,
+      dst.), jadi lapisan event bus buatan sendiri ini akan jadi lapisan
+      ganda yang tidak perlu.
+    </p>
+  </section>
+
+  <section>
+    <h2>Perbandingan (tiga arah)</h2>
+    <p class="section-note">
+      <span class="tag old" style="margin-right:6px;">Blueprint</span> sketsa
+      folder awal dari §9.1.3 —
+      <span class="tag full" style="margin:0 6px;color:var(--full);border:1px solid var(--full-dim);">Full Implementasi</span>
+      versi lengkap pakai interface asli + data fiktif (bagian di atas) —
+      <span class="tag new" style="margin-left:6px;">Built</span> yang benar-benar jalan hari ini.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Kriteria</th><th>Blueprint (sketsa)</th><th>Full Implementasi (fiktif)</th><th>Built (nyata)</th></tr>
+        <tr><td class="crit">Sudah tervalidasi nyata?</td><td class="old-col">Tidak pernah diimplementasikan sungguhan</td><td class="full-col">Tidak — contoh fiktif, belum pernah dites</td><td class="new-col">Ya — Q01/Q02/Q03 FINAL LOCK, live-tested di HackHub</td></tr>
+        <tr><td class="crit">Tempat data quest konkret</td><td class="old-col">Tidak disediakan — harus diciptakan (<code>quests/</code>)</td><td class="full-col">Tetap harus diciptakan (<code>quests/qx/</code>) — blueprint tidak pernah menyediakan ini</td><td class="new-col"><code>content/</code>, sudah dipakai konsisten di 16 quest</td></tr>
+        <tr><td class="crit">Pemisahan command/query</td><td class="old-col">Kelihatannya CQRS (nama folder <code>commands/queries/services</code>)</td><td class="full-col">Koreksi: <code>QuestService</code> asli (§9.3.20) satu interface kohesif, BUKAN command per operasi</td><td class="new-col">Satu service per konsep, method langsung — ternyata mirip</td></tr>
+        <tr><td class="crit">Primitif inti (ID, Result, Error, Event)</td><td class="old-col">Disebut konsepnya saja</td><td class="full-col">Harus dibangun dari nol: <code>core/ids</code>, <code>result</code>, <code>errors</code>, <code>events</code> (EventBus generik)</td><td class="new-col">Sudah ada, lebih ringkas (mis. <code>core/result.ts</code> 13 baris, tanpa error-code enum)</td></tr>
+        <tr><td class="crit">Event bus generik</td><td class="old-col">Direncanakan sebagai lapisan inti</td><td class="full-col">Terbangun, tapi jadi lapisan ganda — HackHub SDK sendiri sudah jadi event bus (<code>Terminal.Command</code>, <code>Mail.Sent</code>, dst.)</td><td class="new-col">Tidak dipakai — quest listen langsung ke event SDK</td></tr>
+        <tr><td class="crit">Kecocokan buat kasus kita</td><td class="old-col">Berlebihan — sketsa awal terlihat berat</td><td class="full-col">Tetap berlebihan setelah dibangun penuh — dua lapis abstraksi (SDK asli + EventBus buatan) buat mod single-player</td><td class="new-col">Pas — kompleksitas sesuai kebutuhan nyata</td></tr>
+        <tr><td class="crit">Biaya migrasi sekarang</td><td class="old-col">~100+ file, estimasi kasar</td><td class="full-col">Tervalidasi lebih detail: core primitif baru + <code>quests/</code> + adapter ulang, buat 1 quest fiktif saja sudah 6 file baru</td><td class="new-col">Nol — sudah begini</td></tr>
+        <tr><td class="crit">Risiko ke Q01-Q03 FINAL LOCK</td><td class="old-col">Tinggi — semua perlu re-test live</td><td class="full-col">Sama tingginya — migrasi tetap menyentuh semua quest yang sudah lolos</td><td class="new-col">Tidak ada</td></tr>
+        <tr><td class="crit">Kejelasan boundary SDK</td><td class="old-col"><code>adapters/</code> generik, nama SDK tidak eksplisit</td><td class="full-col">Sama — <code>infrastructure/adapters/hackhub/</code> tetap generik di level folder induk</td><td class="new-col"><code>infrastructure/hackhub/</code> — eksplisit sejak nama folder</td></tr>
+        <tr><td class="crit"><code>presentation/</code>, <code>debug/</code></td><td class="old-col">Direncanakan, tak pernah dipakai</td><td class="full-col">Tidak dibangun di contoh ini — tidak ada kebutuhan nyata yang mengisinya</td><td class="new-col">Sudah dihapus (dibersihkan 2026-09-12)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="verdict">
+    <h2>Rekomendasi</h2>
+    <p class="verdict-line">Pertahankan arsitektur yang sekarang jalan. Jangan migrasi ke blueprint asli.</p>
+    <ol>
+      <li><strong>Sudah terbukti, bukan teori.</strong> Q01-Q03 FINAL LOCK di atas arsitektur ini, live-tested di HackHub sungguhan. Blueprint Phase&nbsp;9 belum pernah dites sekali pun.</li>
+      <li><strong><code>content/</code> menutup lubang nyata</strong> yang blueprint asli tidak pernah selesaikan — cetak biru itu sama sekali tidak punya jawaban "data konkret satu quest taruh di mana", dan yang saya masukkan tadi (<code>quests/</code>) murni karangan saya sendiri buat mengisi lubang itu.</li>
+      <li><strong>Bukan CQRS seperti dugaan awal — tapi tetap dua lapis yang tidak perlu.</strong> Setelah dibangun penuh, <code>QuestService</code> asli ternyata satu interface kohesif, bukan command per operasi. Tapi blueprint tetap mewajibkan <code>EventBus</code> generik buatan sendiri, padahal HackHub SDK <em>sendiri</em> sudah berfungsi sebagai event bus (<code>Terminal.Command</code>, <code>Mail.Sent</code>, dst.) — jadi tetap dua lapis event system yang saling tumpang tindih, tanpa manfaat tambahan.</li>
+      <li><strong>Migrasi sekarang = biaya penuh, manfaat nol.</strong> Memindah 100+ file demi menyamai dokumen desain yang ditulis sebelum satu baris kode pun ada, sambil mempertaruhkan regresi ke 3 quest yang sudah lolos live-validation — tidak sepadan.</li>
+      <li><strong>Yang layak diambil dari blueprint sudah diambil.</strong> Domain modeling (quest, evidence, investigation, dst.) dan aturan kepemilikan state (<code>StateStore</code> tunggal, <code>ConditionNode</code> tunggal) itu justru inti benar dari Phase&nbsp;9 — dan itu sudah diimplementasikan persis. Yang tidak cocok cuma mekanika file-layout dan lapisan event-bus generiknya, bukan filosofinya.</li>
+      <li><strong>Implementasi penuh (fiktif) mengonfirmasi, bukan membatalkan, kesimpulan ini.</strong> Membangun satu quest fiktif lewat interface asli dokumen — bukan cuma sketsa folder — tetap butuh 6 file baru (empat primitif <code>core/</code>, satu <code>quests/qx/</code> karangan, satu adapter) untuk hasil yang secara perilaku setara dengan kode Q03 yang sudah ada. Detail berubah (bukan CQRS), rekomendasinya tidak.</li>
+    </ol>
+  </section>
+
+  <footer>
+    entity-resolution-mods — dibuat 2026-09-17 dari data src/ &amp; dokumen "Phase 9 — SDK Implementation Plan" yang sama-sama nyata
+  </footer>
+
+</div>
+</body>
+</html>

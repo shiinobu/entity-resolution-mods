@@ -215,42 +215,22 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         }
 
         if (!isDev) {
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q02.xp.investigate-target"),
-                kind: "experience",
-                amount: Q02_REWARDS.investigateTarget,
-            });
+            const claimXp = (suffix: string, amount: number): void => {
+                gameRuntime.reward.claim({
+                    id: asId<"Reward">(`entity_resolution.q02.xp.${suffix}`),
+                    kind: "experience",
+                    amount,
+                });
+            };
 
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q02.xp.service-enumeration"),
-                kind: "experience",
-                amount: Q02_REWARDS.serviceEnumeration,
-            });
-
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q02.xp.certificate-inspection"),
-                kind: "experience",
-                amount: Q02_REWARDS.certificateInspection,
-            });
-
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q02.xp.report-anomaly"),
-                kind: "experience",
-                amount: Q02_REWARDS.reportAnomaly,
-            });
-
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q02.xp.identify-cri-hostname"),
-                kind: "experience",
-                amount: Q02_REWARDS.identifyCriHostname,
-            });
+            claimXp("investigate-target", Q02_REWARDS.investigateTarget);
+            claimXp("service-enumeration", Q02_REWARDS.serviceEnumeration);
+            claimXp("certificate-inspection", Q02_REWARDS.certificateInspection);
+            claimXp("report-anomaly", Q02_REWARDS.reportAnomaly);
+            claimXp("identify-cri-hostname", Q02_REWARDS.identifyCriHostname);
 
             if (this.Data.dnsChecked) {
-                gameRuntime.reward.claim({
-                    id: asId<"Reward">("entity_resolution.q02.xp.check-dns"),
-                    kind: "experience",
-                    amount: Q02_REWARDS.checkDns,
-                });
+                claimXp("check-dns", Q02_REWARDS.checkDns);
             }
 
             const moneyGranted = gameRuntime.economy.applyMissionReward(

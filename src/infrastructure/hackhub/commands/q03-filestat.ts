@@ -12,10 +12,6 @@ type Q03FilestatTools = Parameters<Command["Run"]>[0];
 const buildFileName = (name: string, extension: string | undefined): string =>
     extension ? `${name}.${extension}` : name;
 
-// Confirmed live 2026-09-15 (see docs/source-current.md's
-// "Live-Test Findings"): `Files.getByPath` does NOT resolve a relative path
-// against the terminal's cwd on its own — every path argument must go
-// through `Files.resolvePath` first, unlike native `ls`/`cat`.
 @RegisterCommand({ default: true, scope: "remote" })
 export class Q03FilestatCommand extends Command {
     CommandName = "filestat";
@@ -44,9 +40,6 @@ export class Q03FilestatCommand extends Command {
 
         const fileName = buildFileName(file.name, file.extension);
 
-        // println() does not interpret embedded "\n" as separate terminal
-        // lines — confirmed live 2026-09-15 — so every table line is its
-        // own println() call.
         for (const line of formatFileStat(fileName, Q03_FILESTAT_METADATA[fileName])) {
             tools.println(line);
         }

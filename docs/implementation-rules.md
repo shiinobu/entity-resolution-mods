@@ -11,7 +11,7 @@ The source design's "Relay" private-messaging system (distinct from the phone-ca
 
 ## 1. File split: `content/` declares, quest files call
 
-- `src/content/qNN.ts` holds every piece of **data** a quest needs: target IPs/hosts, objective IDs, the `Objectives` array, nmap/lynx fixture results, network port lists, reward numbers, report subjects/bodies/templates, delay constants (`setTimeout` durations), template IDs/labels, and the `HackhubPost` feed-post definition (content text + author). `HackhubPost` was missed on the first pass for both Q01 and Q02 — it stayed as an inline object literal in the quest files until caught and corrected on 2026-09-14 — so treat it as content exactly like mail bodies, not as behavior.
+- `src/content/qNN.ts` holds every piece of **data** a quest needs: target IPs/hosts, objective IDs, the `Objectives` array, nmap/lynx fixture results, network port lists, reward numbers, report subjects/bodies/templates, delay constants (`setTimeout` durations), template IDs/labels, the `HackhubPost` feed-post definition (content text + author), and the phone-call **`Dialog` tree** (all `QuestDialogDefinition` branches/lines — pure narrative data). `HackhubPost` was missed on the first pass for both Q01 and Q02 — it stayed as an inline object literal in the quest files until caught and corrected on 2026-09-14 — so treat it as content exactly like mail bodies, not as behavior. `Dialog` was missed the same way for Q03 (834-line quest file, caught and split out 2026-09-17) — check for this explicitly on every future quest with dialogue (Q08, Q09, Q11-Q16). The actual `Dialog.onEnd`/`onSelect` fix (bugs.md entry 1) only requires building `Dialog` with `switchBranch`/`isEnd` and zero function properties — no wrapper is required for a quest to work. `infrastructure/hackhub/dialog-utils.ts`'s `withDialogLineReadTap` Proxy wrapper is optional diagnostic tooling (logs which line was read, for debugging a stalled dialog) — reach for it only while investigating a dialogue problem, then remove it from the shipped `Dialog` field once the quest reaches FINAL LOCK (see §11).
 - `src/infrastructure/hackhub/qNN-quest.ts` is the **only** quest file — it only **imports and uses** those declarations. No local `const` literal arrays/objects duplicating content that `content/` already owns. (Historical: this used to be two files, production + a separate `dev/qNN-replay-quest.ts`; the whole dev-replay-file system was removed and replaced by the single `isDev` flag — see §7.)
 - Exception: small **helper functions** (fixture registration, host normalization, `sendAdrianMail`-style wrappers, event handlers) stay in the quest file — they are behavior, not content.
 
@@ -157,3 +157,18 @@ Full rules and revision history live in `docs/email-rules.md` — summary for qu
 - **Personal/individual character** (a contact not tied to a visible organization's own website, e.g. Adrian) → `.void` TLD (e.g. `phantom-net.void`). Add the identity to `src/content/characters.ts` before implementing the quest that sends/receives mail from them — never a per-quest random alias.
 - **Organization mailbox** → that organization's own hostname TLD, matching its `Website.Host` (e.g. `@skynet-logistics.idx`, not `.void`) — an org's mail domain realistically matches its own web domain.
 - Never invent a third TLD for either case without updating the contract doc first.
+
+## 11. FINAL LOCK comment policy — MANDATORY RULE
+
+Once a quest reaches **FINAL LOCK** (its design and live-test cycle are done, no further behavior changes expected), its source files must end up **comment-free**, with every genuinely useful piece of institutional knowledge relocated to permanent docs first:
+
+1. Read every comment in that quest's `content/qNN.ts`, `infrastructure/hackhub/qNN-quest.ts`, and any `infrastructure/hackhub/commands/qNN-*.ts` files.
+2. For each comment that records a real decision, bug, SDK quirk, or rationale not already covered: add/extend the matching entry in `docs/bugs.md` (engine/SDK bugs and quirks) or the quest's section in `docs/source-current.md` (design/story/objective rationale) — never a new doc file, never a per-quest scratch file.
+3. Only after every comment's content has a permanent home, delete the comments from the source file. A comment that only restates what the code already says (no non-obvious "why") can be deleted outright with no doc entry.
+4. Verify with `grep -n "//"` (and `grep -n "console\."`, see §12) on every touched file — zero matches expected.
+
+This does **not** apply retroactively to quests that are still in progress (not yet FINAL LOCK) — normal in-progress commenting is fine while a quest's design is still settling. Applied to Q03 2026-09-17 (see `docs/bugs.md` entries 18-24 and `docs/source-current.md`'s Q03 section for what was extracted).
+
+## 12. Diagnostic tracing — MANDATORY RULE
+
+Never call `console.log` directly for a debugging/trace print. Use the shared `trace(scope, message, ...args)` helper in `src/infrastructure/hackhub/logger.ts` instead — one place that owns the log format (`[SCOPE DIAG] message`), so tracing never sprawls into scattered ad-hoc `console.log` calls across quest files again. Remove all `trace()` calls from a quest's source once it reaches FINAL LOCK, per §11 — tracing is investigation tooling, not shipped behavior.

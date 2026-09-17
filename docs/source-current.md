@@ -317,8 +317,21 @@ reportFindings   06 — send findings to Adrian (no accusation)
 
 `filestat`, `bootlog`, and `zgrep` are custom `@RegisterCommand`s (no native
 equivalent exists) using the SDK's `Files` namespace — see `docs/bugs.md`
-entries 6 and 16 for the `Files.resolvePath`/manifest-permission gotchas
-that had to be solved to make them work over SSH.
+entries 6, 16, 18-20 for the `Files.resolvePath`/manifest-permission/SSH
+network-shape/stale-fixture/`.gz`-extension gotchas that had to be solved to
+make Q03 work end to end.
+
+`checkBackup` is deliberately **not** in `reportFindings`'s unlock chain even
+though it's on the same log-rotation gap as `checkGatewayLogs` — gating the
+mandatory chain on a fact only reachable via Q02's own optional DNS bonus
+would soft-lock any player who skipped that earlier optional step.
+`checkGatewayLogs` only requires listing `/var/log/gateway/` and seeing the
+gap; the deeper `zgrep` search is an ungated bonus tool, not a requirement.
+
+Q03 targets the exact same host Q02 already resolved (no new hidden
+target, no re-resolve puzzle) — the opening mail states the hostname/IP
+directly, since the story beat here is "the client asks about a server you
+already found," not "find a new server."
 
 ### Access credentials (redesigned 2026-09-16/17)
 

@@ -221,29 +221,18 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         }
 
         if (!isDev) {
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q01.xp.external-audit"),
-                kind: "experience",
-                amount: Q01_REWARDS.externalAudit,
-            });
+            const claimXp = (suffix: string, amount: number): void => {
+                gameRuntime.reward.claim({
+                    id: asId<"Reward">(`entity_resolution.q01.xp.${suffix}`),
+                    kind: "experience",
+                    amount,
+                });
+            };
 
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q01.xp.network-service-enumeration"),
-                kind: "experience",
-                amount: Q01_REWARDS.networkServiceEnumeration,
-            });
-
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q01.xp.basic-vulnerability-assessment"),
-                kind: "experience",
-                amount: Q01_REWARDS.basicVulnerabilityAssessment,
-            });
-
-            gameRuntime.reward.claim({
-                id: asId<"Reward">("entity_resolution.q01.xp.submit-report"),
-                kind: "experience",
-                amount: Q01_REWARDS.submitCorrectReport,
-            });
+            claimXp("external-audit", Q01_REWARDS.externalAudit);
+            claimXp("network-service-enumeration", Q01_REWARDS.networkServiceEnumeration);
+            claimXp("basic-vulnerability-assessment", Q01_REWARDS.basicVulnerabilityAssessment);
+            claimXp("submit-report", Q01_REWARDS.submitCorrectReport);
 
             const moneyGranted = gameRuntime.economy.applyMissionReward(
                 {

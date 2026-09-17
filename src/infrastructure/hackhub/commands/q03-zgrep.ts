@@ -24,21 +24,6 @@ const splitGlobPath = (globPath: string): { readonly dirPath: string; readonly p
     };
 };
 
-// RENAMED 2026-09-15 (post-FINAL-LOCK design pass, from `archgrep`):
-// `archgrep` shipped as a placeholder — it has no discovery path (native
-// `help` inside an SSH session never lists it, since it isn't a real Linux
-// tool the player would think to try) and reads as unrelated to log
-// search. `zgrep` is the real-world tool name for grepping inside gzip
-// files, matching this command's actual purpose, and was confirmed live
-// 2026-09-15 to NOT collide with any native HackHub command (native
-// `grep`/`zgrep` cannot decompress `.gz` content at all — confirmed
-// empirically against a guaranteed-present string — so this custom command
-// fills a real gap rather than shadowing a working native tool). See
-// docs/mechanics-reference.md for the full naming rationale.
-//
-// Confirmed live 2026-09-15: `Files.getByPath` does NOT resolve a relative
-// path against the terminal's cwd on its own — every path argument goes
-// through `Files.resolvePath` first, unlike native `ls`/`cat`.
 @RegisterCommand({ default: true, scope: "remote" })
 export class Q03ZgrepCommand extends Command {
     CommandName = "zgrep";
@@ -84,9 +69,6 @@ export class Q03ZgrepCommand extends Command {
             return;
         }
 
-        // println() does not interpret embedded "\n" as separate terminal
-        // lines — confirmed live 2026-09-15 — so every formatted line is
-        // its own println() call.
         for (const line of formatSearchMatches(matches)) {
             tools.println(line);
         }
