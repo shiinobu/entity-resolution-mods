@@ -10,3 +10,4 @@ coverage/
 .idea/
 .claude/rules/
 .claude/settings.local.json
+build-install.ps1
