@@ -9,6 +9,7 @@ import "./infrastructure/hackhub/websites/q02-cri-gateway-portal.js";
 import "./infrastructure/hackhub/q01-quest.js";
 import "./infrastructure/hackhub/q02-quest.js";
 import "./infrastructure/hackhub/q03-quest.js";
+import "./infrastructure/hackhub/q04-quest.js";
 
 import {
     Bootstrap,

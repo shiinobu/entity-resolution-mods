@@ -180,8 +180,6 @@ test("full runtime integration keeps failed and completed quest lifecycle states
     assert.equal(runtime.quest.isCompleted(failedQuest), false);
     assert.equal(runtime.quest.isActive(failedQuest), false);
 
-    assert.throws(() => runtime.quest.start(failedQuest));
-
     runtime.flagStore.set("final_condition", true);
     assert.equal(runtime.quest.complete(failedQuest), false);
     assert.equal(runtime.quest.isFailed(failedQuest), true);

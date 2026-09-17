@@ -214,6 +214,7 @@ export const Q03_REWARDS = {
 } as const;
 
 export const Q03_REPORT_CALLBACK_DELAY: ScheduleDelay = { days: 1 };
+export const Q03_POST_WAIT_DIALOG_DELAY_MS = 5_000;
 
 const Q03_POST_REPORT_INTRO: QuestDialogSpeech[] = [
     { speaker: "Adrian", text: "Thanks. I'll forward this to the client.", audio: "", timeout: 3000 },

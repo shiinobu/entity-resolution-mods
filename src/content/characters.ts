@@ -10,69 +10,40 @@ export const ADRIAN_COLE: CanonicalCharacterEmail = {
     email: "adrian.cole@phantom-net.void",
 };
 
-// SKELETON — introduced Q05. TODO: confirm email once Q05 is implemented.
 export const MAYA_HART: CanonicalCharacterEmail = {
     id: "character.maya.hart",
     name: "Maya Hart",
     email: "maya.hart@phantom-net.void",
 };
 
-// Introduced Q07. Surname "Ward" confirmed via direct quest-card quotes in
-// the design doc's Q10/Q11/Q15/Q16 LOCKED sections ("Daniel Ward"). TODO:
-// email placeholder until Q07 is implemented.
 export const DANIEL_WARD: CanonicalCharacterEmail = {
     id: "character.daniel.ward",
     name: "Daniel Ward",
     email: "daniel.ward@phantom-net.void",
 };
 
-// SKELETON — introduced Q14. TODO: confirm email once Q14 is implemented.
 export const MARCUS_REED: CanonicalCharacterEmail = {
     id: "character.marcus.reed",
     name: "Marcus Reed",
     email: "marcus.reed@phantom-net.void",
 };
 
-// Introduced Q16. Surname "Hale" confirmed via the design doc's Q13/Q16
-// LOCKED sections ("Victor Hale's involvement", "Supporting: ... Victor
-// Hale"). TODO: email placeholder until Q16 is implemented.
 export const VICTOR_HALE: CanonicalCharacterEmail = {
     id: "character.victor.hale",
     name: "Victor Hale",
     email: "victor.hale@phantom-net.void",
 };
 
-// Confirmed real in Phase 8 (the authoritative source — supersedes an
-// earlier Phase 6 "underutilized" note): role is "aggregate/public data ->
-// statistical analysis -> Elena -> anomaly evidence"; she works from public
-// data only, never restricted data ("Elena Integration", audit status
-// RESOLVED). No single quest number is given in the source for her — she's
-// an optional, evidence-triggered contact (player reaches her via
-// Maya/Daniel references after finding qualifying evidence), most likely
-// relevant somewhere in the Q12-Q15 evidence-heavy range, but this is not
-// pinned to one quest in the source. TODO: confirm exact quest/trigger and
-// email once that quest is implemented.
 export const ELENA_BROOKS: CanonicalCharacterEmail = {
     id: "character.elena.brooks",
     name: "Elena Brooks",
     email: "elena.brooks@phantom-net.void",
 };
 
-// The 7th and final roster member (source's own character list: "Adrian
-// Cole, Maya Hart, Daniel Ward, Victor Hale, Elena Brooks, Marcus Reed,
-// Unknown"). "Unknown" is the character's own canonical in-story label,
-// not a placeholder this project invented — their real name is
-// deliberately withheld even after Q16's confrontation (Q15's LOCKED
-// source: "OPERATOR NAME: WITHHELD"; explicitly never-created flag
-// `operator_identity_revealed`). Only their technical identity reference,
-// ARKA-OPS-0441, is ever confirmed — used as the email local-part instead
-// of inventing a real name. TODO: confirm whether this address is ever
-// actually used in-game (mail/Relay) once Q16 is implemented; may end up
-// unused if Unknown only ever appears via Dialog.
 export const UNKNOWN: CanonicalCharacterEmail = {
     id: "character.unknown",
     name: "Unknown",
-    email: "arka-ops-0441@phantom-net.void",
+    email: "unknown@unknown.x",
 };
 
 export const CANONICAL_CHARACTER_EMAILS = {

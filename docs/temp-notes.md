@@ -9,7 +9,7 @@ findings move to `docs/bugs.md` (engine/SDK bugs) or `docs/source-current.md`
 this file goes back to empty (or gets reused for whichever quest is active
 next).
 
-**Currently scoped to: none** — Q03 re-locked 2026-09-17 (see `docs/bugs.md`
-entries 25-27 and `docs/source-current.md`'s Q03 section for what was
-extracted from here). Empty until the next quest goes into active
-development.
+**Currently scoped to: none** — Q04 reached FINAL LOCK on 2026-09-17 (see
+`docs/bugs.md` entries 29-34 and `docs/source-current.md`'s Q04 section
+for what was extracted from here). Empty until the next quest goes into
+active development.

@@ -39,6 +39,7 @@ import {
     Q03_NMAP_RESULT,
     Q03_OBJECTIVES,
     Q03_OBJECTIVE_IDS,
+    Q03_POST_WAIT_DIALOG_DELAY_MS,
     Q03_REPORT_BODY,
     Q03_REPORT_CALLBACK_DELAY,
     Q03_REPORT_SUBJECT,
@@ -432,7 +433,10 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
 
     receiveReportCallback(backupChecked: boolean): void {
         const startBranch = backupChecked ? "postReportMainWithBackup" : "postReportMain";
-        this.createDialog(startBranch);
+
+        setTimeout(() => {
+            this.createDialog(startBranch);
+        }, Q03_POST_WAIT_DIALOG_DELAY_MS);
     }
 
     private finishReportFindings(): void {

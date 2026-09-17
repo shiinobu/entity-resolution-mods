@@ -653,6 +653,138 @@ rollback; corrected as part of this pass.
 
 ---
 
+## 29. `mods.reset` doesn't clear this mod's own `SaveStorage`, so `QuestService.start()` threw on any stale entry — extended to a full self-heal
+
+**Status: RESOLVED (self-heal, no workaround needed)**
+Found: Q03 (`activeQuestId`, earlier session) and Q04 (`completedQuestIds`),
+2026-09-17. Native HackHub engine, all SDK versions tested.
+
+`mods.reset entity-resolution` clears HackHub's own native quest-completion
+state but never touches this mod's own persisted `SaveStorage` blob. When
+the native engine calls a quest's `OnStart()` again after a reset,
+`QuestService.start()` (this project's own domain code, not the SDK) still
+saw the quest as active/completed/failed from before and threw
+`Cannot start quest "...": quest is already completed` (or "active"/
+"has already failed"). Confirmed live for both `activeQuestId` (Q03) and
+`completedQuestIds` (Q04) mismatches.
+
+**Fix:** `QuestService.start()` no longer throws on any of the three
+checks — it filters the quest id out of `completedQuestIds`/`failedQuestIds`
+and sets it active, on the reasoning that the native engine calling
+`OnStart()` at all is itself authoritative proof nothing should still be
+blocking a (re)start. See `src/application/quest-service.ts`.
+
+---
+
+## 30. GoMail template `content` needs a literal `{{fieldName}}` placeholder — declaring a `field` alone leaves nowhere to render it
+
+**Status: RESOLVED**
+Found: Q04, 2026-09-17. SDK `0.24.0`.
+
+Registering a `Mail.registerTemplate` with `fields: ["note"]` but a
+`content` string with no `{{note}}` placeholder leaves GoMail with no
+input to render for that field — the Send button stays permanently
+disabled, no error. The SDK's own doc comment on
+`MailTemplateDefinition.content` says this explicitly ("Use
+`{{fieldName}}` for editable placeholders"), easy to miss since the
+`Mail.registerTemplate` JSDoc example only shows a single trivial case.
+
+**Fix:** give the template body its own content string containing the
+placeholder (e.g. `"...\n\n{{note}}"`), separate from any plain
+freehand-match content used elsewhere for the same objective.
+
+---
+
+## 31. A declared GoMail template `field` is mandatory in practice — Send stays disabled if it's left empty, even with the `{{placeholder}}` present
+
+**Status: RESOLVED (workaround: split into two templates)**
+Found: Q04, 2026-09-17. SDK `0.24.0`. Undocumented behavior, confirmed by
+direct live testing (not stated anywhere in the `.d.ts`).
+
+After fixing bug 30 above, Send *still* stayed disabled whenever the
+`note` field was left blank — a template's declared `fields` appear to be
+required inputs in this SDK's actual compose UI, with no way to mark one
+optional. This broke a design that needed "field left empty" as a valid,
+sendable choice (Option A of a two-option close-out flow).
+
+**Fix:** register two separate templates instead of one with an optional
+field — one with no `fields` at all (static content, always sendable,
+covers the "nothing to fill in" case), and one with the field genuinely
+required (covers the case that always needed input anyway).
+
+---
+
+## 32. `Desktop.addWidget`'s `src` must live under a flat top-level folder matching the SDK's own doc example — a path mirroring `src/`'s nested structure silently fails
+
+**Status: RESOLVED**
+Found: Q04, 2026-09-17. SDK `0.24.0`.
+
+The build script (`build.mjs`'s `scanSourceAssets()`) copies every
+`.html` file under `src/` to `dist/` preserving its full nested path, so
+placing a widget at `src/infrastructure/hackhub/widgets/foo.html` and
+pointing `Desktop.addWidget({ src: "infrastructure/hackhub/widgets/foo.html" })`
+at the matching path does put the file at that location in the built mod
+— and it still doesn't resolve. `Desktop.addWidget`'s own doc example
+uses a flat `src: "widgets/clock.html"`, matching this project's existing
+convention for other root-relative assets (e.g. `Employer.avatar:
+"assets/adrian-cole.png"`, which lives in `public/assets/` and is copied
+verbatim by `prepareDist()`). Widget content needs to live in
+`public/widgets/`, not anywhere under `src/infrastructure/hackhub/`.
+
+**Fix:** moved the widget HTML to `public/widgets/`, `src` changed to
+the flat `"widgets/<file>.html"` form.
+
+---
+
+## 33. `Desktop.addWidget()` called from inside a `QuestDialogSpeech.onEnd` callback loses the SDK's mod-attribution — `src` can never resolve, "Not found" with no thrown error
+
+**Status: RESOLVED (workaround: bounce through a Scheduler job)**
+Found: Q04, 2026-09-17. SDK `0.24.0`. Confirmed by direct elimination
+testing — this is the actual root cause behind bug 32 persisting even
+after the path was corrected.
+
+`Desktop.getWidgets()` showed the widget registering with `modId:
+"__unknown__"` instead of the mod's real id (`"entity-resolution"`)
+specifically when `Desktop.addWidget()` was called synchronously from
+inside a `QuestDialogSpeech.onEnd` function — even wrapped in
+`setTimeout(0)`. The exact same call from a native `Mail.Sent` event
+handler, and from a `Scheduler`-registered callback (`createScheduledCallback`),
+both correctly reported `modId: "entity-resolution"`. `Desktop.addWidget`
+never throws when this happens — the call "succeeds" and the widget
+frame renders at the requested size/position, but its content is always
+a generic "Not found" page since the file can't be resolved without a
+known owning mod.
+
+**Fix:** never call `Desktop.addWidget` (or presumably any other
+mod-attributed API) directly from inside `Dialog.onEnd`. Bounce through a
+second `Scheduler` job instead (`ScheduleDelay.realMs` for a
+barely-perceptible real-world pause, e.g. `{ realMs: 500 }`) — Scheduler
+callbacks are confirmed to preserve `modId` correctly, so calling the
+mod-attributed API from inside the Scheduler's own callback (not
+`onEnd` directly) works.
+
+---
+
+## 34. `DesktopWidget` has no z-index/focus/always-on-top control — cannot be forced to the foreground
+
+**Status: OPEN (limitation, no workaround beyond pairing with `UI.notify`)**
+Found: Q04, 2026-09-17. SDK `0.24.0`.
+
+The `DesktopWidget` interface (`id`, `src`, `width`, `height`, `position`,
+`transparent`) has no field controlling stacking order or focus. A widget
+can be covered by any other app window the player has open, with no way
+to bring it back to front from mod code. The mod's own `App` model
+(`RegisterApp`) also can't be force-opened/focused from code — it
+requires the player to manually open it themselves, and is meant for
+persistent installed apps, not one-off popups.
+
+**Workaround shipped:** pair `Desktop.addWidget` with `UI.notify(...)` at
+the same moment — not a fix, just the closest thing to a guaranteed-visible
+cue that something appeared, since `UI.notify` renders as a system-level
+notification rather than a desktop-layer element.
+
+---
+
 ## Reorg note
 
 Full bug/live-test writeups that used to live inline inside

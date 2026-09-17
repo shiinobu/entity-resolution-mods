@@ -198,3 +198,54 @@ for unbuilt quests).
   through `infrastructure/hackhub/logger.ts`'s `trace()`, never raw
   `console.log`) — applies going forward to Q04-Q16, not retroactively to
   Q01/Q02.
+- **Q04 (LEAVE IT ALONE) implemented and reached FINAL LOCK.** All 4
+  mandatory + 1 hidden-optional objective wired: `reviewDecommissionNotice`,
+  `verifyServerStatus`, `closeAudit` (dual GoMail templates — one
+  fields-less for close-as-requested, one with a required `note` field for
+  add-a-note, after two rounds of live-testing found a declared template
+  field must have a `{{placeholder}}` and can't be left optional — bugs.md
+  30/31), `decideOnEvidence` (3-way dialog choice), optional
+  `checkLastConnection`. New feature added on request: `Abandonable = true`
+  (first quest in this codebase to expose the native Abandon Quest action).
+  Fixed a shared-engine bug along the way affecting every quest, not just
+  Q04: `QuestService.start()` no longer throws on a stale `completedQuestIds`/
+  `failedQuestIds` entry left over from `mods.reset` not clearing this
+  mod's own `SaveStorage` (bugs.md 29; full `test:all`, 260/260, run since
+  it's shared code).
+- **"Unknown" relay hook built as a `Desktop.addWidget` popup**, not a
+  mail — a terminal-styled, letter-by-letter-typed window from
+  `unknown@unknown.x` (the anonymous identity in `characters.ts`,
+  deliberately not the ARKA-OPS-0441 technical id that belongs to Q16's
+  reveal), paired with `UI.notify()` since `Desktop.addWidget` has no
+  z-order/focus control at all (bugs.md 34). Getting it working live
+  surfaced two real SDK bugs: a nested `src` path matching where the
+  build script actually copies the file still doesn't resolve — widget
+  content has to live in `public/widgets/`, flat, matching the SDK's own
+  doc example (bugs.md 32); and `Desktop.addWidget()` silently loses the
+  SDK's mod-attribution when called from inside a `Dialog.onEnd` callback,
+  confirmed by elimination against `Mail.Sent` and `Scheduler` callbacks
+  which don't have the problem (bugs.md 33) — worked around by bouncing
+  through a second near-zero-delay `Scheduler` job instead of calling
+  directly from `onEnd`. Quest completion for the two immediate-choice
+  branches now waits for the widget to actually close (~20s) instead of
+  firing the instant the dialog ends, so the player sees the full hook
+  before the quest visibly finishes.
+- **Q03 reopened once more, narrowly, for a pacing fix**: `receiveReportCallback`
+  called `createDialog` directly off the 1-day `reportCallback` Scheduler
+  job, popping Adrian's call while the native "Wait" screen transition
+  (after using Wait to skip the delay) was still fading back in. Added a
+  5-second real-time settle via a plain `setTimeout` before opening the
+  dialog — confirmed safe because this call site was never observed to
+  lose `modId` (that issue is specific to `Dialog.onEnd`, not to
+  Scheduler-triggered code calling `createDialog()` itself). The
+  identical fix, same 5s delay, applied to Q04's own
+  `receiveCloseAuditCallback` for consistency.
+- **Both of Q04's `OnStart` mail bodies rewritten** after reviewing 4
+  drafted variants of each: Adrian's informal heads-up now carries a hint
+  of unease; the formal client notice became an actual letter (letterhead
+  "Skynet Logistics / IT Operations", salutation, body, signature block
+  "IT Operations Division"), subject changed to "Confirmation of
+  Scheduled Decommission: edge-03". `dev-flag.ts`'s `DEV_FOCUS_QUEST.q04`
+  set back to `false` now that Q04 is FINAL LOCK, matching Q01-Q03; every
+  entry is `false` until Q05 becomes the active target. Full `test:all`
+  clean (262/262) at FINAL LOCK.

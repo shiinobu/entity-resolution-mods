@@ -9,25 +9,17 @@ export class QuestService {
     ) {}
 
     start(quest: Quest): void {
-        const state = this.domainState.get().quests;
-
-        if (state.completedQuestIds.includes(quest.id)) {
-            throw new Error(
-                `Cannot start quest "${quest.id}": quest is already completed.`,
-            );
-        }
-
-        if (state.failedQuestIds.includes(quest.id)) {
-            throw new Error(
-                `Cannot start quest "${quest.id}": quest has already failed.`,
-            );
-        }
-
         this.domainState.update((domain) => ({
             ...domain,
             quests: {
                 ...domain.quests,
                 activeQuestId: quest.id,
+                completedQuestIds: domain.quests.completedQuestIds.filter(
+                    (id) => id !== quest.id,
+                ),
+                failedQuestIds: domain.quests.failedQuestIds.filter(
+                    (id) => id !== quest.id,
+                ),
             },
         }));
     }

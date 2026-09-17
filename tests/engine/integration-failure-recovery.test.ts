@@ -70,9 +70,13 @@ test("failed service operations preserve canonical state and allow recovery", ()
     runtime.flagStore.set("recovery_ready", true);
     assert.equal(runtime.quest.complete(quest), true);
 
+    runtime.quest.start(quest);
+    assert.equal(runtime.quest.isActive(quest), true);
+    assert.equal(runtime.quest.isCompleted(quest), false);
+    assert.equal(runtime.quest.complete(quest), true);
+
     const beforeFailure = runtime.stateStore.getState();
 
-    assert.throws(() => runtime.quest.start(quest));
     assert.throws(() =>
         runtime.economy.debit(
             500,

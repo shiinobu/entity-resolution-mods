@@ -102,6 +102,48 @@ describe("QuestService", () => {
         assert.equal(service.isActive(secondQuest), true);
     });
 
+    it("self-heals a stale completedQuestIds entry instead of throwing (mods.reset doesn't clear this mod's custom save state)", () => {
+        const {
+            domainState,
+            service,
+        } = createFixture();
+
+        const quest = createQuest();
+
+        service.start(quest);
+        service.complete(quest);
+
+        service.start(quest);
+
+        assert.equal(service.isActive(quest), true);
+        assert.equal(service.isCompleted(quest), false);
+        assert.deepEqual(
+            domainState.get().quests.completedQuestIds,
+            [],
+        );
+    });
+
+    it("self-heals a stale failedQuestIds entry instead of throwing", () => {
+        const {
+            domainState,
+            service,
+        } = createFixture();
+
+        const quest = createQuest();
+
+        service.start(quest);
+        service.fail(quest);
+
+        service.start(quest);
+
+        assert.equal(service.isActive(quest), true);
+        assert.equal(service.isFailed(quest), false);
+        assert.deepEqual(
+            domainState.get().quests.failedQuestIds,
+            [],
+        );
+    });
+
     it("checks objective completion using ConditionEvaluator", () => {
         const {
             flagStore,

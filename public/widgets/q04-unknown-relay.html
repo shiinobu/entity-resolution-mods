@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>relay</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Press+Start+2P&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root {
+            color-scheme: dark;
+
+            --bg: #030603;
+            --panel: #071007;
+            --panel-2: #0a120a;
+
+            --line: #173617;
+
+            --green: #39ff88;
+            --green-dim: #82c99b;
+
+            --text: #d8f5df;
+            --muted: #58765f;
+
+            --white: #e8f9ec;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        body {
+            font-family: "JetBrains Mono", monospace;
+        }
+
+        .terminal {
+            width: 100%;
+            height: 100%;
+
+            border: 1px solid var(--line);
+            border-radius: 10px;
+
+            background: rgba(3, 6, 3, 0.97);
+
+            box-shadow:
+                0 0 40px rgba(57, 255, 136, 0.12);
+
+            color: var(--text);
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
+
+            overflow: hidden;
+        }
+
+        .logo {
+            padding: 6px 8px;
+            font-size: 8px;
+            line-height: 1.1;
+            white-space: pre;
+            width: fit-content;
+            margin: 0 auto;
+            color: var(--white);
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+        }
+
+        .bar {
+            padding: 7px 12px;
+
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+
+            background: var(--panel-2);
+
+            color: var(--green);
+
+            font-size: 11px;
+
+            letter-spacing: 0.08em;
+        }
+
+        .bar::before {
+            content: "●";
+
+            margin-right: 8px;
+
+            color: var(--green);
+
+            font-size: 8px;
+        }
+
+        .meta {
+            padding: 8px 16px;
+
+            border-bottom: 1px solid var(--line);
+
+            background: rgba(10, 18, 10, 0.45);
+
+            color: var(--green-dim);
+
+            font-size: 10px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+        }
+
+        .meta-left {
+            display: flex;
+            gap: 18px;
+
+            min-width: 0;
+        }
+
+        .meta-item {
+            white-space: nowrap;
+        }
+
+        .meta-label {
+            color: var(--muted);
+        }
+
+        .meta-value {
+            color: var(--green-dim);
+        }
+
+        .body {
+            flex: 1;
+
+            min-height: 0;
+
+            padding: 20px 18px;
+
+            font-size: 12px;
+            line-height: 1.7;
+
+            white-space: pre-wrap;
+
+            overflow: hidden;
+
+            position: relative;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .message {
+            max-width: 760px;
+        }
+
+        #message {
+            white-space: pre-wrap;
+        }
+
+        .cursor {
+            display: inline-block;
+
+            width: 7px;
+            height: 13px;
+
+            background: var(--green);
+
+            vertical-align: text-bottom;
+
+            margin-left: 2px;
+
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .diagnostic-header {
+            flex: 0 0 auto;
+
+            padding: 6px 16px;
+
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+
+            background: rgba(10, 18, 10, 0.75);
+
+            color: var(--muted);
+
+            font-size: 9px;
+
+            letter-spacing: 0.12em;
+        }
+
+        .boot {
+            flex: 0 0 auto;
+
+            height: 100px;
+
+            padding: 8px 16px;
+
+            background: rgba(3, 6, 3, 0.98);
+
+            color: var(--green-dim);
+
+            font-size: 9px;
+            line-height: 1.55;
+
+            overflow: hidden;
+        }
+
+        .boot-line {
+            white-space: pre;
+        }
+
+        .boot-ok {
+            color: var(--green);
+        }
+
+        .footer {
+            flex: 0 0 auto;
+
+            padding: 6px 16px;
+
+            border-top: 1px solid var(--line);
+
+            background: var(--panel);
+
+            color: var(--muted);
+
+            font-size: 9px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .secure {
+            color: var(--green-dim);
+        }
+
+        .secure::first-letter {
+            color: var(--green);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="terminal">
+
+    <!-- =========================================
+         LOGO
+    ========================================= -->
+
+    <div class="logo">
+ █    ██  ███▄    █  ██ ▄█▀ ███▄    █  ▒█████   █     █░███▄    █ 
+ ██  ▓██▒ ██ ▀█   █  ██▄█▒  ██ ▀█   █ ▒██▒  ██▒▓█░ █ ░█░██ ▀█   █ 
+▓██  ▒██░▓██  ▀█ ██▒▓███▄░ ▓██  ▀█ ██▒▒██░  ██▒▒█░ █ ░█▓██  ▀█ ██▒
+▓▓█  ░██░▓██▒  ▐▌██▒▓██ █▄ ▓██▒  ▐▌██▒▒██   ██░░█░ █ ░█▓██▒  ▐▌██▒
+▒▒█████▓ ▒██░   ▓██░▒██▒ █▄▒██░   ▓██░░ ████▓▒░░░██▒██▓▒██░   ▓██░
+░▒▓▒ ▒ ▒ ░ ▒░   ▒ ▒ ▒ ▒▒ ▓▒░ ▒░   ▒ ▒ ░ ▒░▒░▒░ ░ ▓░▒ ▒ ░ ▒░   ▒ ▒ 
+░░▒░ ░ ░ ░ ░░   ░ ▒░░ ░▒ ▒░░ ░░   ░ ▒░  ░ ▒ ▒░   ▒ ░ ░ ░ ░░   ░ ▒░
+ ░░░ ░ ░    ░   ░ ░ ░ ░░ ░    ░   ░ ░ ░ ░ ░ ▒    ░   ░    ░   ░ ░ 
+   ░              ░ ░  ░            ░     ░ ░      ░            ░ 
+    </div>
+
+
+    <!-- =========================================
+         RELAY HEADER
+    ========================================= -->
+
+    <div class="bar">
+        INCOMING RELAY
+    </div>
+
+
+    <!-- =========================================
+         MESSAGE META
+    ========================================= -->
+
+    <div class="meta">
+
+        <div class="meta-left">
+
+            <div class="meta-item">
+                <span class="meta-label">FROM:</span>
+                <span class="meta-value">
+                    unknown@unknown.x
+                </span>
+            </div>
+
+            <div class="meta-item">
+                <span class="meta-label">ROUTE:</span>
+                <span class="meta-value">
+                    ENCRYPTED
+                </span>
+            </div>
+
+        </div>
+
+        <div class="meta-item">
+
+            <span class="meta-label">
+                STATUS:
+            </span>
+
+            <span class="meta-value">
+                SECURE
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         MESSAGE
+    ========================================= -->
+
+    <div class="body">
+
+        <div class="message"><span id="message"></span><span class="cursor" id="cursor"></span></div>
+
+    </div>
+
+
+    <!-- =========================================
+         DIAGNOSTIC HEADER
+    ========================================= -->
+
+    <div class="diagnostic-header">
+        RELAY DIAGNOSTICS
+    </div>
+
+
+    <!-- =========================================
+         BOOT / SYSTEM LOG
+    ========================================= -->
+
+    <div
+        class="boot"
+        id="boot"
+    ></div>
+
+
+    <!-- =========================================
+         FOOTER
+    ========================================= -->
+
+    <div class="footer">
+
+        <span>
+            RELAY NODE: DSS-04
+        </span>
+
+        <span class="secure">
+            ● CHANNEL SECURE
+        </span>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* =========================================
+       TIMING
+    ========================================= */
+
+    const bootStart = performance.now();
+
+
+    const timestamp = () => {
+
+        return (
+            (performance.now() - bootStart) / 1000
+        )
+        .toFixed(6)
+        .padStart(8, " ");
+
+    };
+
+
+    /* =========================================
+       ELEMENTS
+    ========================================= */
+
+    const bootEl =
+        document.getElementById("boot");
+
+    const messageEl =
+        document.getElementById("message");
+
+    const cursorEl =
+        document.getElementById("cursor");
+
+
+    /* =========================================
+       BOOT SEQUENCE
+    ========================================= */
+
+    const bootSteps = [
+
+        {
+            delay: 700,
+
+            render: () =>
+                `[${timestamp()}] establishing relay handshake...`
+        },
+
+        {
+            delay: 650,
+
+            render: () =>
+                `[${timestamp()}] spoofing origin address... done`
+        },
+
+        {
+            delay: 650,
+
+            render: () =>
+                `[${timestamp()}] wiping session metadata... done`
+        },
+
+        {
+            delay: 550,
+
+            render: () =>
+                `[${timestamp()}] routing through node DSS-04...`
+        },
+
+        {
+            delay: 550,
+
+            render: () =>
+                `[${timestamp()}] encrypting relay channel... done`
+        },
+
+        {
+            delay: 450,
+
+            render: () =>
+                `[  OK  ] connection: UNTRACEABLE`
+        }
+
+    ];
+
+
+    /* =========================================
+       MESSAGE
+    ========================================= */
+
+    const messageText = [
+
+        "You found the wrong server.",
+        "",
+        "But you found it for the right reason.",
+        "",
+        "Don't trust the inventory.",
+        "",
+        "Don't trust the logs.",
+        "",
+        "And don't ask Adrian what he knows.",
+        "",
+        "— U"
+
+    ].join("\n");
+
+
+    /* =========================================
+       APPEND BOOT LINE
+    ========================================= */
+
+    const appendBootLine = (text) => {
+
+        const line =
+            document.createElement("div");
+
+        line.className = "boot-line";
+
+        if (text.includes("[  OK  ]")) {
+
+            line.innerHTML =
+                text.replace(
+                    "[  OK  ]",
+                    `<span class="boot-ok">[  OK  ]</span>`
+                );
+
+        } else {
+
+            line.textContent = text;
+
+        }
+
+        bootEl.appendChild(line);
+
+    };
+
+
+    /* =========================================
+       BOOT ANIMATION
+    ========================================= */
+
+    const playBoot = (index = 0) => {
+
+        if (index >= bootSteps.length) {
+
+            setTimeout(() => {
+
+                typeMessage();
+
+            }, 600);
+
+            return;
+        }
+
+
+        const step =
+            bootSteps[index];
+
+
+        setTimeout(() => {
+
+            appendBootLine(
+                step.render()
+            );
+
+            playBoot(index + 1);
+
+        }, step.delay);
+
+    };
+
+
+    /* =========================================
+       MESSAGE TYPING
+    ========================================= */
+
+    let messageIndex = 0;
+
+
+    const getTypingDelay = (
+        char,
+        nextChar
+    ) => {
+
+        let delay =
+            25 + Math.random() * 30;
+
+
+        /*
+         * Pause between paragraphs
+         */
+
+        if (
+            char === "\n" &&
+            nextChar === "\n"
+        ) {
+
+            delay += 450;
+
+        }
+
+
+        /*
+         * Pause after punctuation
+         */
+
+        if (
+            char === "." ||
+            char === "," ||
+            char === "—"
+        ) {
+
+            delay += 220;
+
+        }
+
+
+        return delay;
+
+    };
+
+
+    const typeMessage = () => {
+
+        if (
+            messageIndex >=
+            messageText.length
+        ) {
+
+            return;
+
+        }
+
+
+        const char =
+            messageText[messageIndex];
+
+
+        messageEl.insertAdjacentText(
+            "beforeend",
+            char
+        );
+
+
+        messageIndex++;
+
+
+        const nextChar =
+            messageText[messageIndex] || "";
+
+
+        setTimeout(
+            typeMessage,
+            getTypingDelay(
+                char,
+                nextChar
+            )
+        );
+
+    };
+
+
+    /* =========================================
+       START
+    ========================================= */
+
+    playBoot();
+
+</script>
+
+</body>
+</html>

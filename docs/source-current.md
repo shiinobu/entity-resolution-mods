@@ -541,9 +541,94 @@ entity_resolution.adrian_warned_player
 | `adrian_suspicious`/`adrian_warned_player` treatment unclear | Confirmed global (not `q03.`-scoped) flags, first actually set here | Source itself writes these without a per-quest prefix; Q03's recovery pass resolved the ambiguity left open by Q02. |
 | Source never specifies how the player obtains SSH access | New `findAccess` objective (00): mail attachment `old-creds.bak` with a SHA-256 hash, cracked via custom `crackhash` command | Entirely a project-owner design decision (2026-09-16/17), not sourced — needed after two native-tool attempts (`john`, `hydra`) both failed for reasons outside mod control. See `docs/bugs.md` entry 3. |
 
-## Q04–Q16 (current design intent — not yet live-implemented)
+## Q04 — LEAVE IT ALONE (current)
 
-None of Q04–Q16 are registered/playable yet (structural skeleton only, per
+```text
+ID: entity_resolution.q04 · Chapter 01 — GHOST SERVER · Jakarta · Primary: Adrian
+Depends on: entity_resolution.q03 · Next: Q05 (not yet implemented)
+```
+
+### Opening
+
+Two mails arrive on claim, both from Adrian's inbox (no client-direct-mail
+precedent exists in this codebase, so the formal notice is modeled as
+Adrian relaying it): an informal heads-up ("I know how that sounds. Just
+close it.") and a formal client letter — letterhead "Skynet Logistics /
+IT Operations", signed "IT Operations Division", subject "Confirmation of
+Scheduled Decommission: edge-03". `reviewDecommissionNotice` completes on
+reading the formal letter specifically, not the informal one.
+
+### Objectives (4 mandatory + 1 hidden optional)
+
+`reviewDecommissionNotice` → `verifyServerStatus` (plain `nmap` on the
+reused Q02/Q03 host, no `-sV` needed — no forwarded/anomaly port to reveal
+this time) → `closeAudit` → `decideOnEvidence` (leave it alone / keep a
+copy / take one last look) → optional `checkLastConnection` (`hidden:
+true`, same mechanism as Q02's `checkDns` — unlocks after `decideOnEvidence`
+for all three choices, but only "take one last look" gives narrative
+reason to pursue it; completes on `Terminal.Cat` of `gateway.log`, which
+shows a session to `10.42.7.18` with no matching `auth.log` entry).
+
+### Close Audit
+
+No bespoke "audit panel" UI exists in the SDK. Modeled as a `Mail.Sent`
+submission via two GoMail templates in the compose dropdown: "Close Audit"
+(no fields, static content — Option A, close-as-requested) and "Close
+Audit (add a note)" (required `note` field — Option B, add-a-note). A
+freehand exact-match path also validates both option's literal content.
+Both options complete the same objective identically; no story consequence
+distinguishes them (discussed and declined — flavor-only per the source).
+
+### Adrian's phone call and the relay hook
+
+`closeAudit` schedules a 1-day in-game delay, then (after a 5s real-time
+pause once that Scheduler event fires, so the call doesn't pop while the
+native "Wait" screen is still transitioning) opens the `decideOnEvidence`
+dialog. Whichever of the three choices the player makes, ~0.5s after the
+dialog ends a `Desktop.addWidget` popup appears — a terminal-styled
+"incoming relay" window from `unknown@unknown.x` (the anonymous
+`characters.ts` identity, deliberately not the ARKA-OPS-0441 technical
+identity that would spoil Q16's reveal), paired with a `UI.notify()` cue
+since `Desktop.addWidget` has no way to force itself to the foreground.
+The message ("You found the wrong server... — U") types out letter by
+letter. See `docs/bugs.md` for the `Dialog.onEnd` mod-attribution SDK
+quirk this popup's plumbing works around.
+
+### Quest completion
+
+`AutoComplete` is off — the engine would otherwise wait forever on the
+hidden `checkLastConnection` objective for the two branches that never
+open it. For "leave it alone"/"keep a copy", the quest completes when the
+relay widget auto-closes (~20s after it appears), so the player sees the
+full hook before the quest visibly ends. For "take one last look",
+completion instead waits for `checkLastConnection` to actually finish.
+
+### Reward
+
+$350 money, 100 XP max (20 per line: decommission status, active server,
+last connection, auth/log mismatch, preserve anomalous evidence — the
+last two gated behind `checkLastConnection`).
+
+### Persistent state
+
+`entity_resolution.q04.completed`, `.last_connection_checked`,
+`.cri_ip_confirmed`, `.log_mismatch_found`, plus campaign-wide
+`adrian_warned_player = true` and `unknown_contacted_player = true`
+(newly added to `ENTITY_RESOLUTION_FLAGS`). `cri_known` stays `false` —
+deliberately never set here, per the source.
+
+### Changes from original source
+
+| Original | Current | Why |
+|---|---|---|
+| Client **Meridian Logistics**, host `edge-03.meridian.local`, ID `dead_signal_q04` | **Skynet Logistics**, reused Q02/Q03 host, `entity_resolution.q04` | Same project-wide rename. |
+| No mechanism specified for `closeAudit` | GoMail dual-template submission (see above) | No native "audit panel" widget exists in the SDK; mirrors the report-submission pattern Q01–Q03 already established. |
+| `decideOnEvidence`/"one last look" framed as instant | Delayed via a 1-day Scheduler job + 5s real-time settle, then the relay widget itself pop up ~0.5s after the call ends | Matches the pacing precedent set by Q03's report callback; the extra `Dialog.onEnd` bounce was forced by an SDK quirk, not a design choice (see `docs/bugs.md`). |
+| Anonymous "— U" hook framed as a mail | A `Desktop.addWidget` popup with a typed reveal, sender `unknown@unknown.x` | Project-owner request for a "sudden intrusion" feel; no anonymous-sender primitive exists for `Mail.send`, and email would sit passively unread like any other inbox item. |
+
+## Q05–Q16 (current design intent — not yet live-implemented)
+
+None of Q05–Q16 are registered/playable yet (structural skeleton only, per
 `docs/implementation-notes.md`) — "current" here means "current
 design intent," not live game state. Full narrative (mail bodies, dialogue
 scripts) beyond objective/reward/dependency level has not been recovered for
@@ -557,7 +642,6 @@ decision).
 
 | Quest | Title | Chapter | Objectives (mand./opt.) | Money max | XP max |
 |---|---|---|---:|---:|---:|
-| Q04 | LEAVE IT ALONE | 1 | 4 / 1 | $350 | 100 |
 | Q05 | SECOND CLIENT | 2 | 4 / 1 | $400 | 100 |
 | Q06 | THE DATABASE | 2 | 4 / 2 | $450 | 120 |
 | Q07 | CONNECTIONS | 2 | 3 / 1 | $500 | 120 |
@@ -571,32 +655,11 @@ decision).
 | Q15 | THE EVIDENCE | 4 | 7 / 1 | $700 | 115 |
 | Q16 | THE DECISION | 4 | 9 / 0 | $1,000 | 150 |
 
-Per-quest premise/objective/flag detail for Q04–Q13 and Q16 (below) is
+Per-quest premise/objective/flag detail for Q05–Q13 and Q16 (below) is
 unchanged from the Phase 8 spec in `docs/source-original.md` beyond the
 `dead_signal_qNN` → `entity_resolution.qNN` naming rename (see Changes at the
 end) — no design content has diverged for this range, so it's reproduced
 here in full, in current naming, rather than left as a cross-reference.
-
-### Q04 — LEAVE IT ALONE
-
-```text
-ID: entity_resolution.q04 · Chapter 01 — GHOST SERVER · Jakarta · Primary: Adrian
-Depends on: entity_resolution.q03.completed = true · Next: Q05
-```
-
-Objectives (4 mandatory + 1 optional): `reviewDecommissionNotice` →
-`verifyServerStatus` (ping/nmap, same ports as Q02) → `closeAudit` →
-`decideOnEvidence` (leave it alone / keep a copy / take one last look) →
-optional `checkLastConnection` (`10.42.7.18` shows a `gateway.log` session
-with no matching `auth.log` entry — a log/auth mismatch).
-
-Reward: $350 money, 100 XP max (20 per line: decommission status, active
-server, last connection, auth/log mismatch, recognize anomalous evidence).
-
-State: `entity_resolution.q04.completed`, `.last_connection_checked`,
-`.cri_ip_confirmed`, `.log_mismatch_found`, plus campaign-wide
-`adrian_warned_player = true`, `unknown_contacted_player = true`,
-`cri_known = false`.
 
 ### Q05 — SECOND CLIENT
 

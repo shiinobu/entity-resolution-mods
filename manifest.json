@@ -5,6 +5,6 @@
   "author": "Shiinobu",
   "description": "ENTITY RESOLUTION story and gameplay expansion for HackHub.",
   "apiVersion": 1,
-  "permissions": ["events", "mail", "network", "shell", "filesystem"],
+  "permissions": ["events", "mail", "network", "shell", "filesystem", "ui", "storage"],
   "tags": ["story", "quest", "investigation", "mystery"]
 }
