@@ -13,7 +13,8 @@ import {
 import {
     applyDevGating,
     ENTITY_RESOLUTION_FLAGS,
-    isDev,
+    isQuestDevFocus,
+    questGate,
     Q03_ACCESS_ATTACHMENT_EXTENSION,
     Q03_ACCESS_ATTACHMENT_NAME,
     Q03_ACCESS_HASH,
@@ -133,7 +134,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
     override Group = "storyline" as const;
     override AutoStart = false;
     override AutoComplete = true;
-    override QuestsToComplete = isDev ? [] : ["entity_resolution.q02"];
+    override QuestsToComplete = questGate("q03", ["entity_resolution.q02"]);
     override Rewards = {
         money: 0,
         xp: 0,
@@ -148,7 +149,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
 
     override Dialog: QuestDialogDefinition = Q03_DIALOG;
 
-    override Objectives = applyDevGating(Q03_OBJECTIVES);
+    override Objectives = applyDevGating(Q03_OBJECTIVES, isQuestDevFocus("q03"));
 
     override CreateData(): Q03QuestData {
         return {
@@ -254,7 +255,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
             );
         }
 
-        if (!isDev) {
+        if (!isQuestDevFocus("q03")) {
             const claimXp = (suffix: string, amount: number): void => {
                 gameRuntime.reward.claim({
                     id: asId<"Reward">(`entity_resolution.q03.xp.${suffix}`),

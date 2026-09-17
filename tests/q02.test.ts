@@ -203,16 +203,16 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.equal(service.areObjectivesComplete(Q02_THE_ANOMALY), true);
     });
 
-    it("requires Q01 completion before Q02 becomes available, skipped when isDev", () => {
+    it("requires Q01 completion before Q02 becomes available, via questGate", () => {
         assert.match(
             questSource,
-            /QuestsToComplete = isDev \? \[\] : \["entity_resolution\.q01"\]/,
+            /QuestsToComplete = questGate\("q02", \["entity_resolution\.q01"\]\)/,
         );
     });
 
-    it("gates objective unlocksAfter and reward-granting on the isDev flag", () => {
-        assert.match(questSource, /applyDevGating\(Q02_OBJECTIVES\)/);
-        assert.match(questSource, /if \(!isDev\) \{/);
+    it("gates objective unlocksAfter and reward-granting on the q02 dev-focus flag", () => {
+        assert.match(questSource, /applyDevGating\(Q02_OBJECTIVES, isQuestDevFocus\("q02"\)\)/);
+        assert.match(questSource, /if \(!isQuestDevFocus\("q02"\)\) \{/);
     });
 
     it("gates Objective 01 on reading Adrian's mail, not an OnStart auto-complete", () => {
@@ -270,7 +270,10 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.match(q02ContentSource, /export const Q02_NETWORK_PORTS/);
         assert.match(q02ContentSource, /export const Q02_OBJECTIVES/);
         assert.doesNotMatch(questSource, /const Q02_NMAP_RESULT/);
-        assert.match(questSource, /override Objectives = applyDevGating\(Q02_OBJECTIVES\);/);
+        assert.match(
+            questSource,
+            /override Objectives = applyDevGating\(Q02_OBJECTIVES, isQuestDevFocus\("q02"\)\);/,
+        );
         assert.match(questSource, /ports: Q02_NETWORK_PORTS,/);
     });
 
@@ -380,14 +383,14 @@ describe("Phase 13 Q02 — THE ANOMALY (recovered source, live validation pendin
         assert.match(gatewayPortalSource, /Q02_GATEWAY_SERVICE_VERSION/);
     });
 
-    it("deposits the money reward into the player's real bank account via the native Bank API, skipped when isDev", () => {
+    it("deposits the money reward into the player's real bank account via the native Bank API, skipped when q02 is the dev focus", () => {
         assert.match(
             questSource,
             /import \{[\s\S]*?\bBank\b[\s\S]*?\} from "@hotbunny\/hackhub-content-sdk";/,
         );
         assert.match(
             questSource,
-            /if \(!isDev\) \{[\s\S]*?const moneyGranted = gameRuntime\.economy\.applyMissionReward\(/,
+            /if \(!isQuestDevFocus\("q02"\)\) \{[\s\S]*?const moneyGranted = gameRuntime\.economy\.applyMissionReward\(/,
         );
         assert.match(questSource, /if \(moneyGranted\) \{\s*Bank\.transaction\(\{/);
     });

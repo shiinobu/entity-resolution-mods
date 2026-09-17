@@ -146,11 +146,11 @@ describe("Q01 — THE CONTRACT (FINAL LOCK, live-in-game passed)", () => {
         );
     });
 
-    it("deposits the money reward into the player's real bank account via the native Bank API, skipped when isDev", () => {
+    it("deposits the money reward into the player's real bank account via the native Bank API, skipped when q01 is the dev focus", () => {
         assert.match(questSource, /import \{[\s\S]*?\bBank\b[\s\S]*?\} from "@hotbunny\/hackhub-content-sdk";/);
         assert.match(
             questSource,
-            /if \(!isDev\) \{[\s\S]*?const moneyGranted = gameRuntime\.economy\.applyMissionReward\(/,
+            /if \(!isQuestDevFocus\("q01"\)\) \{[\s\S]*?const moneyGranted = gameRuntime\.economy\.applyMissionReward\(/,
         );
         assert.match(
             questSource,
@@ -158,14 +158,21 @@ describe("Q01 — THE CONTRACT (FINAL LOCK, live-in-game passed)", () => {
         );
     });
 
-    it("gates objective unlocksAfter and reward-granting on the isDev flag", () => {
-        assert.match(questSource, /applyDevGating\(Q01_OBJECTIVES\)/);
-        assert.match(questSource, /if \(!isDev\) \{/);
+    it("gates objective unlocksAfter and reward-granting on the q01 dev-focus flag", () => {
+        assert.match(questSource, /applyDevGating\(Q01_OBJECTIVES, isQuestDevFocus\("q01"\)\)/);
+        assert.match(questSource, /if \(!isQuestDevFocus\("q01"\)\) \{/);
+    });
+
+    it("stays locked out via questGate when another quest holds dev focus, despite having no real prerequisite", () => {
+        assert.match(questSource, /QuestsToComplete = questGate\("q01", \[\]\)/);
     });
 
     it("has no hint on submitAudit (GoMail compose template teaches the format interactively instead)", () => {
         assert.match(q01ContentSource, /export const Q01_OBJECTIVES/);
-        assert.match(questSource, /override Objectives = applyDevGating\(Q01_OBJECTIVES\);/);
+        assert.match(
+            questSource,
+            /override Objectives = applyDevGating\(Q01_OBJECTIVES, isQuestDevFocus\("q01"\)\);/,
+        );
 
         const submitAudit = Q01_OBJECTIVES.find(
             (objective) => objective.name === Q01_OBJECTIVE_IDS.submitAudit,

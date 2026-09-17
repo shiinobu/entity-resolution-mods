@@ -9,7 +9,8 @@ import {
 
 import {
     applyDevGating,
-    isDev,
+    isQuestDevFocus,
+    questGate,
     Q02_ADRIAN_EMAIL,
     Q02_ANOMALOUS_PORT,
     Q02_CERTIFICATE_ISSUER,
@@ -111,14 +112,14 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
     override Group = "storyline" as const;
     override AutoStart = false;
     override AutoComplete = true;
-    override QuestsToComplete = isDev ? [] : ["entity_resolution.q01"];
+    override QuestsToComplete = questGate("q02", ["entity_resolution.q01"]);
     override Rewards = {
         money: 0,
         xp: 0,
     };
     override HackhubPost = Q02_HACKHUB_POST_PRODUCTION;
 
-    override Objectives = applyDevGating(Q02_OBJECTIVES);
+    override Objectives = applyDevGating(Q02_OBJECTIVES, isQuestDevFocus("q02"));
 
     override CreateData(): Q02QuestData {
         return {
@@ -214,7 +215,7 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
             );
         }
 
-        if (!isDev) {
+        if (!isQuestDevFocus("q02")) {
             const claimXp = (suffix: string, amount: number): void => {
                 gameRuntime.reward.claim({
                     id: asId<"Reward">(`entity_resolution.q02.xp.${suffix}`),

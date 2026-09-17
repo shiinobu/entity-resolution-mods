@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import {
     applyDevGating,
-    isDev,
+    isQuestDevFocus,
     Q03_ACCESS_HASH,
     Q03_BOOT_HISTORY,
     Q03_CLIENT_NAME,
@@ -147,10 +147,11 @@ describe("Q03 — MISSING LOGS (FINAL LOCK, live-in-game passed)", () => {
         );
     });
 
-    it("strips unlocksAfter from every objective when isDev is on, via applyDevGating", () => {
-        const gated = applyDevGating(Q03_OBJECTIVES);
+    it("strips unlocksAfter from every objective when q03 is the dev focus, via applyDevGating", () => {
+        const isFocused = isQuestDevFocus("q03");
+        const gated = applyDevGating(Q03_OBJECTIVES, isFocused);
 
-        if (isDev) {
+        if (isFocused) {
             for (const objective of gated) {
                 assert.equal("unlocksAfter" in objective, false);
             }
@@ -158,9 +159,12 @@ describe("Q03 — MISSING LOGS (FINAL LOCK, live-in-game passed)", () => {
             assert.deepEqual(gated, Q03_OBJECTIVES);
         }
         assert.equal(gated.length, Q03_OBJECTIVES.length);
-        assert.match(questSource, /applyDevGating\(Q03_OBJECTIVES\)/);
-        assert.match(questSource, /QuestsToComplete = isDev \? \[\] : \["entity_resolution\.q02"\]/);
-        assert.match(questSource, /if \(!isDev\) \{/);
+        assert.match(questSource, /applyDevGating\(Q03_OBJECTIVES, isQuestDevFocus\("q03"\)\)/);
+        assert.match(
+            questSource,
+            /QuestsToComplete = questGate\("q03", \["entity_resolution\.q02"\]\)/,
+        );
+        assert.match(questSource, /if \(!isQuestDevFocus\("q03"\)\) \{/);
     });
 
     it("preserves the recovered Phase 8 reward allocation (100 XP max, $300)", () => {
