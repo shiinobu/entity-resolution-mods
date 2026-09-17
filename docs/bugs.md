@@ -13,7 +13,7 @@ why, and the fix or workaround actually shipped.
 
 ## 1. `Dialog.onEnd` / `QuestDialogOption.onSelect` never fire
 
-**Status: OPEN (workaround shipped, upstream cause unconfirmed)**
+**Status: RESOLVED (fixed upstream between SDK 0.21.0 and 0.24.0)**
 Found: Q03, 2026-09-15. Environment: HackHub 1.2.1,
 `@hotbunny/hackhub-content-sdk@0.21.0`, Windows 11/Steam.
 
@@ -79,6 +79,21 @@ override Dialog: QuestDialogDefinition = {
 ```
 Call `this.createDialog("main")`, let it advance past "Line one." — the log
 line never appears, at any point, even after the call fully ends.
+
+**Fixed upstream (2026-09-17):** community report that `onEnd` no longer
+stalls the dialog, on a newer HackHub/SDK build than when this was found.
+Re-verified directly in this project: a probe `onEnd: () => trace(...)` on
+Q03's `postReportA`/`B`/`C` final lines (SDK `0.24.0`, up from `0.21.0` when
+this bug was found) fired cleanly — confirmed via the HackHub log, no stall,
+no error. Q03's `reportFindings` objective now completes from `onEnd`
+directly (exact timing) instead of the fixed `Q03_COMPLETION_DELAY_MS`
+guess-the-worst-case timeout. The `Proxy`-based `withDialogLineReadTap`
+workaround (`infrastructure/hackhub/dialog-utils.ts`) is no longer needed
+and has been deleted — `onEnd` can be used directly on `Dialog` speech
+lines again. Any future quest using a phone-call `Dialog` (Q08/Q09/Q11-Q16)
+should default to `onEnd` for "call ended" side effects; only fall back to
+the fixed-delay pattern if `onEnd` turns out not to fire for some other
+reason.
 
 ---
 
@@ -550,6 +565,68 @@ The event fires with a plain string (the connected IP), not an object —
 the SDK's own `SSHConnectedEvent` interface is marked `@deprecated` for
 exactly this reason. Destructuring the payload as if it were an object
 fails silently wrong; treat it as a plain string.
+
+---
+
+## 25. `findAccess` objective completed from `Mail.Read` instead of the actual credential crack
+
+**Status: RESOLVED**
+Found: Q03, 2026-09-17 (live-test report from the user).
+
+The "Dig up the SSH credentials" objective was auto-completing the instant
+the player read Adrian's mail — before the player had actually cracked
+anything. The mail carries the attachment, not the credentials; completion
+belonged on a successful `crackhash` decrypt, not on reading mail.
+
+**Fix:** removed the `Mail.Read` listener from `q03-quest.ts` entirely.
+`crackhash` (see entry 26 for its own redesign) now emits a custom
+`Q03.CrackhashSuccess` event on a real match; the quest listens for that
+event specifically to complete `findAccess`. This was also the first
+custom mod event used anywhere in this codebase — chosen over having the
+quest independently re-resolve/re-check the file itself (which would have
+duplicated `crackhash`'s own file-read logic and only proven "the command
+ran with a plausible-looking argument," not "actually cracked").
+
+---
+
+## 26. `crackhash` originally took a raw hash string, not the file a player would naturally point at
+
+**Status: RESOLVED**
+Found: Q03, 2026-09-17 (live-test report: `crackhash <path-to-downloaded-attachment>` → "No match found").
+
+`crackhash <hash>` expected the literal hash text as its argument. A player
+naturally runs `crackhash old-creds.bak` — pointing at the downloaded mail
+attachment — not typing out a raw hash they'd have no reason to already
+know. `.bak` also can't be opened with `cat` to reveal the hash text first
+(confirmed live), so there was no legitimate path to success as designed.
+
+**Fix:** `crackhash` now takes a file path, resolves it via
+`Files.resolvePath`/`Files.getByPath` (same pattern `filestat` already
+uses), and compares the file's own `data` content to `Q03_ACCESS_HASH`.
+
+---
+
+## 27. No terminal-command API to update a single line in place — `clear()` wipes the whole screen
+
+**Status: OPEN (limitation, no workaround needed for Q03's use)**
+Found: Q03, 2026-09-17, while building `crackhash`'s cracking-progress
+animation. SDK `0.24.0` (latest published version at the time).
+
+`CommandTools` (the interface every custom terminal command's `Run()`
+receives) has no way to update or replace a single previously-printed
+line — no cursor control, no ANSI/`\r` support (consistent with the
+whitespace-collapse behavior documented elsewhere: this terminal renders
+each `println()` as its own literal text row, not a real character-grid
+terminal emulator). `clear()` is the only "reset the visual state"
+primitive that exists, and it clears the **entire** terminal — confirmed
+live — not just the calling command's own output.
+
+**Workaround shipped:** `crackhash`'s progress-bar animation uses
+`clear()` + re-`println()` each frame anyway; the player accepted losing
+terminal scrollback during that ~2-second animation as an acceptable
+trade-off. Reported to the HackHub SDK dev/community as a possible future
+feature (a single-line update API) — revisit this entry if that ever
+ships.
 
 ---
 

@@ -67,6 +67,9 @@ test("failed service operations preserve canonical state and allow recovery", ()
         "2026-09-11T00:00:00.000Z",
     );
 
+    runtime.flagStore.set("recovery_ready", true);
+    assert.equal(runtime.quest.complete(quest), true);
+
     const beforeFailure = runtime.stateStore.getState();
 
     assert.throws(() => runtime.quest.start(quest));
@@ -80,12 +83,8 @@ test("failed service operations preserve canonical state and allow recovery", ()
     );
 
     assert.deepEqual(runtime.stateStore.getState(), beforeFailure);
-    assert.equal(runtime.quest.isActive(quest), true);
-    assert.equal(runtime.economy.getBalance(), 250);
-
-    runtime.flagStore.set("recovery_ready", true);
-    assert.equal(runtime.quest.complete(quest), true);
     assert.equal(runtime.quest.isCompleted(quest), true);
+    assert.equal(runtime.economy.getBalance(), 250);
 });
 
 test("failed persistence load does not replace canonical state and valid state remains recoverable", () => {

@@ -11,12 +11,6 @@ export class QuestService {
     start(quest: Quest): void {
         const state = this.domainState.get().quests;
 
-        if (state.activeQuestId !== null) {
-            throw new Error(
-                `Cannot start quest "${quest.id}": another quest is already active.`,
-            );
-        }
-
         if (state.completedQuestIds.includes(quest.id)) {
             throw new Error(
                 `Cannot start quest "${quest.id}": quest is already completed.`,

@@ -239,9 +239,11 @@ Q03. See Changes below.
 
 ## Q03 — MISSING LOGS (current)
 
-Status: **FINAL LOCK — LIVE INGAME PASSED** (2026-09-15), **credential-delivery
-redesigned 2026-09-16/17** (see "Access credentials" below) — not yet
-re-verified live against the redesigned flow.
+Status: **FINAL LOCK — LIVE INGAME PASSED** (2026-09-15). Reopened
+2026-09-17 for a real bug pass (see `docs/bugs.md` entries 25-27) and a
+time-skip retrofit; credential-delivery redesign from 2026-09-16/17 (see
+"Access credentials" below) and everything from the reopened pass are now
+**re-verified live, full flow, end to end** (2026-09-17) — re-locked.
 
 ### Canonical Identity
 
@@ -333,19 +335,42 @@ target, no re-resolve puzzle) — the opening mail states the hostname/IP
 directly, since the story beat here is "the client asks about a server you
 already found," not "find a new server."
 
-### Access credentials (redesigned 2026-09-16/17)
+**UI tweak (2026-09-17):** `checkTimestamp`/`reviewBootHistory`'s written-out
+hints ("Try filestat access.log.") were replaced with `terminalCommand`
+icons (`filestat`/`bootlog`) — less hand-holding, just a category nudge.
+`checkGatewayLogs` got `terminalCommand: "ls"` (its actual completion
+trigger) plus a `hint` pointing at `zgrep` (a bonus tool for that folder,
+not itself the trigger). Also renamed the backup files themselves —
+`gateway-2026-0{27,28,29}.tar.txt` → `.log`, first line changed from
+`"archive: ..."` to `"Backup completed: ..."` — the old naming had a file
+pretending to *be* the `.tar.gz` archive while being plain-text readable;
+now it's honestly a backup-service log entry that mentions the archive,
+matching `access.log`/`system.log`/`auth.log` naming.
+
+### Access credentials (redesigned 2026-09-16/17, crackhash mechanism refined 2026-09-17)
 
 The source never specifies how the player obtains SSH access — this
 mechanism is entirely a project-owner design decision, not sourced. Two
 native-tool attempts were tried and abandoned first (`john`, `hydra` — see
 `docs/bugs.md` entry 3 for why both failed). Final mechanism: Adrian's mail
 carries an attachment, `old-creds.bak`, containing a SHA-256 hash
-(`"auditor:Kx8!rTn2Vq"`) of the real SSH credentials. The player runs a
-fully custom, mod-controlled `crackhash <hash>` command (not a real
-cracker — a fixed lookup against that one hash) to recover both the
-username and password at once. Credentials are found, not handed over in
-plaintext in the mail body — the user explicitly rejected putting the
-password directly in the mail text.
+(`"auditor:Kx8!rTn2Vq"`) of the real SSH credentials. Credentials are found,
+not handed over in plaintext in the mail body — the user explicitly
+rejected putting the password directly in the mail text.
+
+**Refined 2026-09-17** (live-test caught two real bugs — `docs/bugs.md`
+entries 25-26): the `findAccess` objective ("Dig up the SSH credentials")
+was originally completing the instant the player read Adrian's mail, before
+actually cracking anything — fixed by moving completion onto a real
+`crackhash` success, detected via a custom `Q03.CrackhashSuccess` mod event
+(this codebase's first). Separately, `crackhash <hash>` originally expected
+the player to already know/type the raw hash text; a player naturally
+points at the downloaded attachment instead — `crackhash` now takes a file
+path (`crackhash old-creds.bak`), resolves it via `Files`, and checks the
+file's own content against the hash. On success it also plays a short
+progress-bar animation (`[####------] 40%`, via `tools.clear()` +
+re-`println()` each frame — see `docs/bugs.md` entry 27 for why that's the
+only option this SDK version offers).
 
 ```text
 Username: auditor
@@ -371,6 +396,16 @@ Recommendation:
 Confirm the original decommission date and obtain
 archived logs from the infrastructure owner.
 ```
+
+**Time-skip (added 2026-09-17):** Adrian doesn't call back the instant the
+report is sent — he needs a day to sit with it. The call is now scheduled
+1 in-game day out via a new reusable `createScheduledCallback()` wrapper
+(`infrastructure/hackhub/scheduled-callback.ts`) around the SDK's
+`Scheduler` (save-resilient — survives quit/reload/coming back a day
+later), the first use of that API in this project. This also means the
+native taskbar "Wait" button now surfaces the pending call, letting the
+player skip ahead instead of idling. Applies in dev-focus testing too
+(delay is not shortened/skipped for `DEV_FOCUS_QUEST.q03`).
 
 ### Adrian's reaction — A/B/C branching phone call
 
@@ -405,8 +440,12 @@ C) "I think someone removed the logs."
 
 This is the explicit start of Adrian's arc: **Complicity → Responsibility**.
 Implemented as three `Dialog` branches (`postReportA`/`B`/`C`) reached via
-`switchBranch` — required removing every `onEnd`/`onSelect` function
-property from the whole `Dialog` object first; see `docs/bugs.md` entry 1.
+`switchBranch`. `Dialog.onEnd`/`onSelect` were unusable when this was first
+built (`docs/bugs.md` entry 1) — fixed upstream since, re-verified
+2026-09-17 — so each branch's final line now uses `onEnd` directly (attached
+at the quest layer, see `q03-quest.ts`'s `attachReportFindingsOnEnd`) to
+complete `reportFindings` at the exact moment the call ends, instead of a
+fixed-delay guess.
 
 ### Quest completion
 

@@ -59,19 +59,19 @@ const Q03_BACKUP_ARCHIVE_HEADER = [
 ].join("\n");
 
 export const Q03_BACKUP_2026_08_27_CONTENT = [
-    "archive: gateway-2026-08-27.tar.gz",
+    "Backup completed: gateway-2026-08-27.tar.gz",
     "",
     Q03_BACKUP_ARCHIVE_HEADER,
 ].join("\n");
 
 export const Q03_BACKUP_2026_08_28_CONTENT = [
-    "archive: gateway-2026-08-28.tar.gz",
+    "Backup completed: gateway-2026-08-28.tar.gz",
     "",
     Q03_BACKUP_ARCHIVE_HEADER,
 ].join("\n");
 
 export const Q03_BACKUP_2026_08_29_CONTENT = [
-    "archive: gateway-2026-08-29.tar.gz",
+    "Backup completed: gateway-2026-08-29.tar.gz",
     "",
     Q03_BACKUP_ARCHIVE_HEADER,
 ].join("\n");
@@ -111,18 +111,18 @@ export const Q03_ROOT_FILES: NetworkFileMap[] = [
                         isFolder: true,
                         children: [
                             {
-                                name: "gateway-2026-08-27.tar",
-                                extension: "txt",
+                                name: "gateway-2026-08-27",
+                                extension: "log",
                                 data: Q03_BACKUP_2026_08_27_CONTENT,
                             },
                             {
-                                name: "gateway-2026-08-28.tar",
-                                extension: "txt",
+                                name: "gateway-2026-08-28",
+                                extension: "log",
                                 data: Q03_BACKUP_2026_08_28_CONTENT,
                             },
                             {
-                                name: "gateway-2026-08-29.tar",
-                                extension: "txt",
+                                name: "gateway-2026-08-29",
+                                extension: "log",
                                 data: Q03_BACKUP_2026_08_29_CONTENT,
                             },
                         ],

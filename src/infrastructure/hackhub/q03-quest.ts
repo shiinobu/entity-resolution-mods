@@ -8,6 +8,7 @@ import {
     Shell,
     type MailAttachment,
     type QuestDialogDefinition,
+    type QuestDialogSpeech,
 } from "@hotbunny/hackhub-content-sdk";
 
 import {
@@ -22,7 +23,6 @@ import {
     Q03_BACKUP_CHECKED_FLAG,
     Q03_BACKUP_RESTRICTED_FLAG,
     Q03_CLIENT_NAME,
-    Q03_COMPLETION_DELAY_MS,
     Q03_COMPLETION_MAIL_CONTENT_PRODUCTION,
     Q03_CRI_POLICY_FOUND_FLAG,
     Q03_DIALOG,
@@ -40,6 +40,7 @@ import {
     Q03_OBJECTIVES,
     Q03_OBJECTIVE_IDS,
     Q03_REPORT_BODY,
+    Q03_REPORT_CALLBACK_DELAY,
     Q03_REPORT_SUBJECT,
     Q03_REPORT_TEMPLATE_CONTENT,
     Q03_REPORT_TEMPLATE_ID,
@@ -55,6 +56,7 @@ import {
 
 import { asId } from "../../core/index.js";
 import { gameRuntime } from "./runtime.js";
+import { createScheduledCallback } from "./scheduled-callback.js";
 import { monthDayMatches, numberSetsMatch } from "./commands/q03-log-tools.js";
 
 interface Q03QuestData {
@@ -83,11 +85,6 @@ interface TerminalCatData {
     readonly id: string;
     readonly name: string;
     readonly extension?: string;
-}
-
-interface MailReadData {
-    readonly from: string;
-    readonly subject: string;
 }
 
 const includesArgMatching = (args: readonly string[], needle: string): boolean =>
@@ -125,6 +122,33 @@ const sendAdrianMail = (
     });
 };
 
+const attachReportFindingsOnEnd = (
+    dialog: QuestDialogDefinition,
+    onEnd: () => void,
+): QuestDialogDefinition => {
+    const withOnEndOnLastLine = (branch: QuestDialogSpeech[]): QuestDialogSpeech[] =>
+        branch.map((line, index) =>
+            index === branch.length - 1 ? { ...line, onEnd } : line,
+        );
+
+    return {
+        ...dialog,
+        postReportA: withOnEndOnLastLine(dialog.postReportA!),
+        postReportB: withOnEndOnLastLine(dialog.postReportB!),
+        postReportC: withOnEndOnLastLine(dialog.postReportC!),
+    };
+};
+
+let activeQ03Instance: EntityResolutionQ03Quest | null = null;
+
+const reportCallback = createScheduledCallback<{ backupChecked: boolean }>(
+    "entity_resolution.q03.reportCallback",
+);
+
+reportCallback.register((payload) => {
+    activeQ03Instance?.receiveReportCallback(payload.backupChecked);
+});
+
 @RegisterQuest
 export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
     override Name = "entity_resolution.q03";
@@ -147,7 +171,9 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
     };
     override HackhubPost = Q03_HACKHUB_POST_PRODUCTION;
 
-    override Dialog: QuestDialogDefinition = Q03_DIALOG;
+    override Dialog: QuestDialogDefinition = attachReportFindingsOnEnd(Q03_DIALOG, () =>
+        this.finishReportFindings(),
+    );
 
     override Objectives = applyDevGating(Q03_OBJECTIVES, isQuestDevFocus("q03"));
 
@@ -166,6 +192,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
     }
 
     override OnStart() {
+        activeQ03Instance = this;
         gameRuntime.quest.start(Q03_MISSING_LOGS);
 
         Network.destroyNetwork(Q03_TARGET_IP);
@@ -229,8 +256,8 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
             this.handleSshConnected(ip);
         });
 
-        this.Events.on("Mail.Read", (data) => {
-            this.handleMailRead(data);
+        this.Events.on("Q03.CrackhashSuccess", () => {
+            this.handleCrackhashSuccess();
         });
 
         this.Events.on("Mail.Sent", (data) => {
@@ -319,12 +346,8 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         this.completeObjective(Q03_OBJECTIVE_IDS.accessHost);
     }
 
-    private handleMailRead(data: MailReadData): void {
+    private handleCrackhashSuccess(): void {
         if (this.Data.accessFound) {
-            return;
-        }
-
-        if (data.from !== Q03_ADRIAN_EMAIL || data.subject !== Q03_INCOMING_MAIL_SUBJECT) {
             return;
         }
 
@@ -390,6 +413,7 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
 
             return;
         }
+
     }
 
     private handleMailSent(subject: string, content: string): void {
@@ -400,16 +424,19 @@ export class EntityResolutionQ03Quest extends HackHubQuest<Q03QuestData> {
         this.SetData("reportSubmitted", true);
         gameRuntime.flagStore.set(ENTITY_RESOLUTION_FLAGS.adrianSuspicious, true);
 
-        const startBranch = this.Data.backupChecked ? "postReportMainWithBackup" : "postReportMain";
+        reportCallback.schedule(
+            { backupChecked: this.Data.backupChecked },
+            Q03_REPORT_CALLBACK_DELAY,
+        );
+    }
 
+    receiveReportCallback(backupChecked: boolean): void {
+        const startBranch = backupChecked ? "postReportMainWithBackup" : "postReportMain";
         this.createDialog(startBranch);
-        this.finishReportFindings();
     }
 
     private finishReportFindings(): void {
-        setTimeout(() => {
-            this.completeObjective(Q03_OBJECTIVE_IDS.reportFindings);
-        }, Q03_COMPLETION_DELAY_MS);
+        this.completeObjective(Q03_OBJECTIVE_IDS.reportFindings);
     }
 
     private isFindingsReport(subject: string, content: string): boolean {

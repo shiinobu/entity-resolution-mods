@@ -13,8 +13,6 @@ import {
     Q03_FILESTAT_METADATA,
     Q03_FINAL_STATE_FLAG,
     Q03_GATEWAY_GZ_FILES,
-    Q03_HOLD_MAIL_BACKUP_SEGMENT,
-    Q03_HOLD_MAIL_BASE_CONTENT,
     Q03_INCOMING_MAIL_CONTENT,
     Q03_LAST_ACTIVITY_DATE,
     Q03_LOGS_START_DATE,
@@ -69,11 +67,12 @@ const q03ContentSource = readSource("../src/content/q03.ts");
 // postReportC) — Adrian explicitly shoots it down ("Don't make that
 // assumption yet."). That's the hard narrative constraint working as
 // designed (the player may *speculate* "removed"; the game/NPCs never
-// *assert* it), not a violation — exclude the Dialog block from the
-// blanket narrator-text scan below so this legitimate player line doesn't
-// trip it.
+// *assert* it), not a violation — exclude the Dialog data (the shared
+// Q03_POST_REPORT_* fragments plus the Q03_DIALOG object built from them,
+// deduplicated 2026-09-17) from the blanket narrator-text scan below so
+// this legitimate player line doesn't trip it.
 const q03ContentSourceWithoutDialog = q03ContentSource.replace(
-    /export const Q03_DIALOG:[\s\S]*?\r?\n};\r?\n/,
+    /const Q03_POST_REPORT_INTRO:[\s\S]*?\r?\nexport const Q03_DIALOG:[\s\S]*?\r?\n};\r?\n/,
     "",
 );
 const questSource = readSource("../src/infrastructure/hackhub/q03-quest.ts");
@@ -111,7 +110,7 @@ describe("Q03 — MISSING LOGS (FINAL LOCK, live-in-game passed)", () => {
         });
     });
 
-    it("gates accessHost on findAccess — the player must read the mail (and its access-hash attachment) before SSH unlocks", () => {
+    it("gates accessHost on findAccess in objective ordering", () => {
         const accessHostObjective = Q03_OBJECTIVES.find(
             (objective) => objective.name === Q03_OBJECTIVE_IDS.accessHost,
         );
@@ -128,9 +127,25 @@ describe("Q03 — MISSING LOGS (FINAL LOCK, live-in-game passed)", () => {
         assert.equal("unlocksAfter" in findAccessObjective, false);
     });
 
-    it("registers a custom crackhash command as the only way to recover credentials from the mail attachment — no native tool involved", () => {
+    it("completes findAccess only on a successful crackhash decrypt, never just from reading the mail", () => {
+        assert.doesNotMatch(questSource, /"Mail\.Read"/);
+        assert.doesNotMatch(questSource, /handleMailRead/);
+        assert.doesNotMatch(questSource, /data\.command === "crackhash"/);
+
+        assert.match(questSource, /"Q03\.CrackhashSuccess"/);
+        assert.match(
+            questSource,
+            /private handleCrackhashSuccess\(\): void \{[\s\S]*?completeObjective\(Q03_OBJECTIVE_IDS\.findAccess\)/,
+        );
+    });
+
+    it("registers a custom crackhash command that reads a file's content, not a raw hash argument — no native tool involved", () => {
         assert.match(crackhashSource, /CommandName = "crackhash"/);
         assert.match(crackhashSource, /Q03_ACCESS_HASH/);
+        assert.match(crackhashSource, /Files\.resolvePath/);
+        assert.match(crackhashSource, /Files\.getByPath/);
+        assert.match(crackhashSource, /file\.data\?\.trim\(\)\.toLowerCase\(\) !== Q03_ACCESS_HASH/);
+        assert.match(crackhashSource, /Events\.emit\("Q03\.CrackhashSuccess"\)/);
         assert.doesNotMatch(crackhashSource, /Shell\.(add|remove)CommandData\("hydra"/);
         assert.equal(Q03_ACCESS_HASH.length, 64);
         assert.match(Q03_ACCESS_HASH, /^[0-9a-f]{64}$/);
@@ -208,16 +223,10 @@ describe("Q03 — MISSING LOGS (FINAL LOCK, live-in-game passed)", () => {
     });
 
     it("never tells the player the logs were deleted — only that they are incomplete/missing (hard narrative constraint)", () => {
-        for (const text of [Q03_INCOMING_MAIL_CONTENT, Q03_REPORT_BODY, Q03_HOLD_MAIL_BASE_CONTENT]) {
+        for (const text of [Q03_INCOMING_MAIL_CONTENT, Q03_REPORT_BODY]) {
             assert.doesNotMatch(text, /delet|removed|erased|wiped/i);
         }
         assert.doesNotMatch(q03ContentSourceWithoutDialog, /"[^"]*\b(delet|removed|erased|wiped)\w*[^"]*"/i);
-    });
-
-    it("splices the backup-specific line into the hold mail conditionally, keeping the unconditional wording identical either way", () => {
-        assert.match(Q03_HOLD_MAIL_BASE_CONTENT, /Don't include the backup finding in the client report yet\./);
-        assert.match(Q03_HOLD_MAIL_BACKUP_SEGMENT, /backup is restricted/);
-        assert.doesNotMatch(Q03_HOLD_MAIL_BASE_CONTENT, /backup is restricted/);
     });
 
     it("keeps port 80 absent from Q03_NETWORK_PORTS (defaults CLOSE), consistent with the mandatory protocol-gating rule on the shared Q02EdgeWebsite host", () => {

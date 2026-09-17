@@ -82,7 +82,7 @@ describe("QuestService", () => {
         );
     });
 
-    it("does not allow another active quest", () => {
+    it("self-heals a stale activeQuestId instead of throwing (mods.reset doesn't clear this mod's custom save state)", () => {
         const {
             service,
         } = createFixture();
@@ -96,10 +96,10 @@ describe("QuestService", () => {
         );
 
         service.start(firstQuest);
+        service.start(secondQuest);
 
-        assert.throws(() => {
-            service.start(secondQuest);
-        });
+        assert.equal(service.isActive(firstQuest), false);
+        assert.equal(service.isActive(secondQuest), true);
     });
 
     it("checks objective completion using ConditionEvaluator", () => {

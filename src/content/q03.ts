@@ -1,6 +1,8 @@
 import type {
     QuestDialogDefinition,
+    QuestDialogSpeech,
     QuestHackhubPostDefinition,
+    ScheduleDelay,
 } from "@hotbunny/hackhub-content-sdk";
 
 import { asId } from "../core/index.js";
@@ -47,7 +49,6 @@ export const Q03_NMAP_RESULT: Q03NmapPort[] = [
 ];
 
 export const Q03_ADRIAN_EMAIL = ADRIAN_COLE.email;
-export const Q03_REPORT_RECIPIENT = Q03_ADRIAN_EMAIL;
 export const Q03_REPORT_SUBJECT = "Server History Report — Skynet Logistics";
 
 export const Q03_LAST_ACTIVITY_DATE = "Sep 08";
@@ -127,22 +128,6 @@ export const Q03_INCOMING_MAIL_CONTENT = [
     "— Adrian",
 ].join("\n");
 
-export const Q03_HOLD_MAIL_BASE_CONTENT = [
-    "Thanks. I'll forward this to the client.",
-    "Actually, hold on.",
-    "Don't include the backup finding in the client report yet.",
-    "",
-    "I want to confirm something first. Just leave it for now.",
-    "I'll get back to you.",
-    "",
-    "— Adrian",
-].join("\n");
-
-export const Q03_HOLD_MAIL_BACKUP_SEGMENT = [
-    "",
-    "The backup is restricted too, I know. Just leave it for now.",
-].join("\n");
-
 export const Q03_COMPLETION_MAIL_CONTENT_PRODUCTION = [
     "You couldn't confirm it, and neither can I right now.",
     "",
@@ -152,8 +137,6 @@ export const Q03_COMPLETION_MAIL_CONTENT_PRODUCTION = [
     "",
     "— Adrian",
 ].join("\n");
-
-export const Q03_COMPLETION_DELAY_MS = 32_000;
 
 export const Q03_FINAL_STATE_FLAG = "entity_resolution.q03.completed";
 export const Q03_LOGS_MISSING_FLAG = "entity_resolution.q03.logs_missing";
@@ -191,18 +174,20 @@ export const Q03_OBJECTIVES = [
     {
         name: Q03_OBJECTIVE_IDS.checkTimestamp,
         description: "Check the file timestamp",
-        hint: "Try filestat access.log.",
+        terminalCommand: "filestat",
         unlocksAfter: [Q03_OBJECTIVE_IDS.checkLogs],
     },
     {
         name: Q03_OBJECTIVE_IDS.reviewBootHistory,
         description: "Review the boot history",
-        hint: "Try bootlog --list-boots.",
+        terminalCommand: "bootlog",
         unlocksAfter: [Q03_OBJECTIVE_IDS.checkLogs],
     },
     {
         name: Q03_OBJECTIVE_IDS.checkGatewayLogs,
         description: "Check the gateway logs",
+        terminalCommand: "ls",
+        hint: "Try zgrep to search the archived gateway logs.",
         unlocksAfter: [Q03_OBJECTIVE_IDS.checkTimestamp, Q03_OBJECTIVE_IDS.reviewBootHistory],
     },
     {
@@ -228,86 +213,65 @@ export const Q03_REWARDS = {
     money: 300,
 } as const;
 
+export const Q03_REPORT_CALLBACK_DELAY: ScheduleDelay = { days: 1 };
+
+const Q03_POST_REPORT_INTRO: QuestDialogSpeech[] = [
+    { speaker: "Adrian", text: "Thanks. I'll forward this to the client.", audio: "", timeout: 3000 },
+    { speaker: "Adrian", text: "Actually, hold on.", audio: "", timeout: 3000 },
+    {
+        speaker: "Adrian",
+        text: "Don't include the backup finding in the client report yet.",
+        audio: "",
+        timeout: 3000,
+    },
+    { speaker: "player", text: "Why?", audio: "", timeout: 3000 },
+    { speaker: "Adrian", text: "Because I don't know what it means.", audio: "", timeout: 3000 },
+    { speaker: "player", text: "The logs are missing.", audio: "", timeout: 3000 },
+    { speaker: "Adrian", text: "I know.", audio: "", timeout: 3000 },
+];
+
+const Q03_POST_REPORT_BACKUP_EXTRA: QuestDialogSpeech[] = [
+    { speaker: "player", text: "And the backup is restricted.", audio: "", timeout: 3000 },
+    { speaker: "Adrian", text: "I know that too.", audio: "", timeout: 3000 },
+];
+
+const Q03_POST_REPORT_CLOSING: QuestDialogSpeech[] = [
+    {
+        speaker: "Adrian",
+        text: "Just leave it for now.",
+        audio: "",
+        options: [
+            {
+                label: "Then why are you asking me to stop?",
+                text: "Then why are you asking me to stop?",
+                switchBranch: "postReportA",
+                audio: "",
+            },
+            {
+                label: "Fine. I'll leave it.",
+                text: "Fine. I'll leave it.",
+                switchBranch: "postReportB",
+                audio: "",
+            },
+            {
+                label: "I think someone removed the logs.",
+                text: "I think someone removed the logs.",
+                switchBranch: "postReportC",
+                audio: "",
+            },
+        ],
+    },
+];
+
 export const Q03_DIALOG: QuestDialogDefinition = {
     postReportMain: [
-        { speaker: "Adrian", text: "Thanks. I'll forward this to the client.", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "Actually, hold on.", audio: "", timeout: 3000 },
-        {
-            speaker: "Adrian",
-            text: "Don't include the backup finding in the client report yet.",
-            audio: "",
-            timeout: 3000,
-        },
-        { speaker: "player", text: "Why?", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "Because I don't know what it means.", audio: "", timeout: 3000 },
-        { speaker: "player", text: "The logs are missing.", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "I know.", audio: "", timeout: 3000 },
-        {
-            speaker: "Adrian",
-            text: "Just leave it for now.",
-            audio: "",
-            options: [
-                {
-                    label: "Then why are you asking me to stop?",
-                    text: "Then why are you asking me to stop?",
-                    switchBranch: "postReportA",
-                    audio: "",
-                },
-                {
-                    label: "Fine. I'll leave it.",
-                    text: "Fine. I'll leave it.",
-                    switchBranch: "postReportB",
-                    audio: "",
-                },
-                {
-                    label: "I think someone removed the logs.",
-                    text: "I think someone removed the logs.",
-                    switchBranch: "postReportC",
-                    audio: "",
-                },
-            ],
-        },
+        ...Q03_POST_REPORT_INTRO,
+        ...Q03_POST_REPORT_CLOSING,
     ],
     postReportMainWithBackup: [
-        { speaker: "Adrian", text: "Thanks. I'll forward this to the client.", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "Actually, hold on.", audio: "", timeout: 3000 },
-        {
-            speaker: "Adrian",
-            text: "Don't include the backup finding in the client report yet.",
-            audio: "",
-            timeout: 3000,
-        },
-        { speaker: "player", text: "Why?", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "Because I don't know what it means.", audio: "", timeout: 3000 },
-        { speaker: "player", text: "The logs are missing.", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "I know.", audio: "", timeout: 3000 },
-        { speaker: "player", text: "And the backup is restricted.", audio: "", timeout: 3000 },
-        { speaker: "Adrian", text: "I know that too.", audio: "", timeout: 3000 },
-        {
-            speaker: "Adrian",
-            text: "Just leave it for now.",
-            audio: "",
-            options: [
-                {
-                    label: "Then why are you asking me to stop?",
-                    text: "Then why are you asking me to stop?",
-                    switchBranch: "postReportA",
-                    audio: "",
-                },
-                {
-                    label: "Fine. I'll leave it.",
-                    text: "Fine. I'll leave it.",
-                    switchBranch: "postReportB",
-                    audio: "",
-                },
-                {
-                    label: "I think someone removed the logs.",
-                    text: "I think someone removed the logs.",
-                    switchBranch: "postReportC",
-                    audio: "",
-                },
-            ],
-        },
+        ...Q03_POST_REPORT_INTRO,
+        ...Q03_POST_REPORT_BACKUP_EXTRA,
+        ...Q03_POST_REPORT_CLOSING,
     ],
     postReportA: [
         {
