@@ -630,6 +630,29 @@ ships.
 
 ---
 
+## 28. `Terminal.Ping` didn't surface a `hidden` objective live — rolled back to `nslookup`
+
+**Status: RESOLVED (workaround shipped: different trigger event)**
+Found: Q02, pre-2026-09-17 (undocumented until this comment-extraction
+pass caught it — the in-code comment describing it had also gone stale).
+
+Q02's hidden bonus objective `checkDns` (`hidden: true` — an undocumented
+SDK field, no `.d.ts` entry) was originally completed by having the player
+ping the private IP `nslookup` reveals (`Terminal.Ping`, checking
+`isUp === false`). Live-testing found the hidden objective never actually
+surfaced/completed through that trigger — whether the root cause was the
+`Terminal.Ping` event itself or something about `hidden` objective
+completion in general was never isolated.
+
+**Fix:** rolled back to completing `checkDns` directly off the `nslookup`
+lookup result via `Terminal.Command` (the same event/pattern already
+proven reliable elsewhere in `q02-quest.ts`, e.g. Objectives 02/03) instead
+of a separate ping step. No `handlePing` method exists in the shipped
+code — an old comment in `content/q02.ts` still referenced it after the
+rollback; corrected as part of this pass.
+
+---
+
 ## Reorg note
 
 Full bug/live-test writeups that used to live inline inside

@@ -260,12 +260,6 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
 
         sendAdrianMail(`Re: ${Q01_REPORT_SUBJECT}`, Q01_COMPLETION_MAIL_CONTENT_PRODUCTION);
         resetQ01ShellFixtures();
-        // Deliberately NOT calling Mail.unregisterTemplate here — confirmed
-        // live that GoMail re-renders a sent mail's history entry from its
-        // template at view time, keyed by template id. Unregistering breaks
-        // the pretty rendering of the player's own already-sent mail
-        // retroactively, turning it into raw JSON. Leaving templates
-        // registered is harmless (a small, permanent compose-dropdown entry).
         Network.removeDomain(Q01_WEB_HOME_HOST);
         Network.destroyNetwork(this.Data.targetIp);
         gameRuntime.persistence.save();
@@ -440,10 +434,6 @@ export class EntityResolutionQ01Quest extends HackHubQuest<Q01QuestData> {
         return subjectMatches && normalizedContent === Q01_REPORT_BODY;
     }
 
-    // Confirmed live (via Q02): sending via the registered GoMail template
-    // does not merge {{field}} placeholders into rendered text. Instead
-    // Mail.Sent's `subject` is the template id and `content` is a raw JSON
-    // object of the field values the player typed.
     private isTemplateAuditReport(subject: string, content: string): boolean {
         if (subject !== Q01_REPORT_TEMPLATE_ID) {
             return false;

@@ -19,10 +19,6 @@ import homePage from "./q01-home.html";
 import httpErrorPage from "./q01-http-error.html";
 import securityPage from "./q01-security.html";
 
-// Only HTTPS (443) is open per Q01_NMAP_RESULT — port 80 is CLOSE. A dynamic
-// page (evaluated mod-side, not in the page's sandboxed iframe) reproduces
-// nginx's real "400 Bad Request" rejection on plain HTTP instead of serving
-// content, matching Q02's DynamicWebsitePageDefinition pattern.
 const page = (
     path: string,
     html: string,
@@ -43,9 +39,6 @@ const page = (
     },
 });
 
-// Experimental path-based redesign: one public host, several pages
-// discovered by path (dirhunter-style) instead of separate subdomains.
-// Not yet locked — see docs/source-current.md.
 @RegisterWebsite
 export class Q01SkynetLogisticsWebsite extends Website {
     SiteName = Q01_CLIENT_NAME;

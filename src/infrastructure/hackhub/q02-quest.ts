@@ -83,10 +83,6 @@ const registerQ02ShellFixtures = (): void => {
     resetQ02ShellFixtures();
     Shell.addCommandData("nmap", Q02_TARGET_IP, Q02_NMAP_RESULT);
     Shell.addCommandData("nmap", "", Q02_NMAP_RESULT);
-    // The player must resolve the anomalous hostname to an IP themselves —
-    // nmap only accepts a literal IP address, so nslookup (or any other
-    // resolver the player prefers) is the natural next step, not something
-    // Adrian hands over directly.
     Shell.addCommandData("nslookup", Q02_WEB_HOST, Q02_TARGET_IP);
     Shell.addCommandData(
         "nslookup",
@@ -145,14 +141,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         });
 
         Network.registerDomain(Q02_WEB_HOST, this.Data.targetIp);
-        // Q02_GATEWAY_IP is a raw IP used directly as a Website host — it is
-        // not a hostname resolving to another IP, so no Network.registerDomain
-        // mapping applies here (experimental; see docs/source-current.md).
-
-        // The hidden SAN hostname resolves too, so Q02CriGatewayHostnameWebsite
-        // can serve its connection-timeout page — separate from (and unrelated
-        // to) the nslookup terminal fixture, which is wired independently via
-        // Shell.addCommandData.
         Network.registerDomain(Q02_HIDDEN_HOSTNAME, Q02_HIDDEN_HOSTNAME_IP);
 
         sendAdrianMail(Q02_INCOMING_MAIL_SUBJECT, Q02_INCOMING_MAIL_CONTENT);
@@ -189,9 +177,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
             if (!this.Data.reportSubmitted) {
                 this.SetData("reportSubmitted", true);
 
-                // Sent synchronously, not inside setTimeout — confirmed live
-                // that Mail.send does not fire reliably from inside a
-                // setTimeout callback, unlike completeObjective, which does.
                 sendAdrianMail(
                     `Re: ${Q02_REPORT_SUBJECT}`,
                     Q02_HOLD_MAIL_CONTENT,
@@ -258,12 +243,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
 
         sendAdrianMail(`Re: ${Q02_REPORT_SUBJECT}`, Q02_COMPLETION_MAIL_CONTENT_PRODUCTION);
         resetQ02ShellFixtures();
-        // Deliberately NOT calling Mail.unregisterTemplate here — confirmed
-        // live that GoMail re-renders a sent mail's history entry from its
-        // template at view time, keyed by template id. Unregistering breaks
-        // the pretty rendering of the player's own already-sent mail
-        // retroactively, turning it into raw JSON. Leaving templates
-        // registered is harmless (a small, permanent compose-dropdown entry).
         Network.removeDomain(Q02_WEB_HOST);
         Network.removeDomain(Q02_HIDDEN_HOSTNAME);
         Network.destroyNetwork(this.Data.targetIp);
@@ -302,9 +281,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
                 return;
             }
 
-            // A bare scan does not reveal the forwarded destination — the
-            // player must use -sV (service/version detection) to identify
-            // what port 8443 actually is. Neither objective clears without it.
             if (!data.args.includes("-sV")) {
                 return;
             }
@@ -342,11 +318,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
                 return;
             }
 
-            // Rolled back from a ping-based trigger (Terminal.Ping did not
-            // surface the hidden objective live) to isolate whether the
-            // problem was the event or the hidden-objective mechanism
-            // itself — nslookup via Terminal.Command is already proven
-            // reliable elsewhere in this file (Obj02/03).
             if (!this.Data.dnsChecked) {
                 this.SetData("dnsChecked", true);
                 this.completeObjective(Q02_OBJECTIVE_IDS.checkDns);
@@ -364,10 +335,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         }
 
         if (data.protocol !== "https:") {
-            // No mail warning here — Adrian has no way of knowing about a
-            // plain-HTTP request the player made in their own browser. The
-            // nginx-style 400 page served by Q02GatewayWebsite already
-            // explains the failure in-fiction.
             return;
         }
 
@@ -412,10 +379,6 @@ export class EntityResolutionQ02Quest extends HackHubQuest<Q02QuestData> {
         return subjectMatches && normalizedContent === Q02_REPORT_BODY;
     }
 
-    // Confirmed live: sending via the registered GoMail template does not
-    // merge {{field}} placeholders into rendered text. Instead Mail.Sent's
-    // `subject` is the template id and `content` is a raw JSON object of the
-    // field values the player typed. This validates that path directly.
     private isTemplateAnomalyReport(subject: string, content: string): boolean {
         if (subject !== Q02_REPORT_TEMPLATE_ID) {
             return false;

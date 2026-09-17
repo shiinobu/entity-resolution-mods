@@ -10,22 +10,12 @@ export const Q02_CLIENT_NAME = Q01_CLIENT_NAME;
 export const Q02_TARGET_IP = "203.0.113.77";
 export const Q02_WEB_HOST = "edge-03.skynet-logistics.idx";
 
-// The anomalous port 8443 is FORWARDED (not merely open) to a separate
-// destination IP, revealed only by `nmap <IP> -sV` (service-version scan).
-// HackHub's Website system has no concept of custom ports (confirmed live — a
-// non-default port URL fails at the browser/network level before any content
-// lookup happens), so the forwarded destination is modeled as its own IP,
-// registered directly as a Website host (experimental — not yet live-tested;
-// will become session-random once the raw-IP-as-Host mechanism is confirmed).
 export const Q02_GATEWAY_IP = "66.250.1.99";
 export const Q02_GATEWAY_SERVICE_VERSION = "nginx 1.18.0";
-export const Q02_WEB_URL = `https://${Q02_GATEWAY_IP}/`;
 
 export const Q02_HIDDEN_HOSTNAME = "cri-gateway.internal";
 export const Q02_HIDDEN_HOSTNAME_IP = "10.42.7.18";
 
-// Shared fixture data — identical between production and replay, so it lives
-// here once instead of being duplicated in both quest files.
 export interface Q02NmapPort {
     readonly port: number;
     readonly status: "OPEN" | "CLOSE" | "FORWARDED";
@@ -52,33 +42,17 @@ export const Q02_NETWORK_PORTS = [
     { external: 8443, internal: 8443, active: true, service: "https-alt" },
 ];
 
-// Paces quest completion after the report is submitted: Objective 05 is the
-// last objective, so completing it immediately triggers AutoComplete + the
-// completion mail. The hold mail itself is sent synchronously (not delayed)
-// — confirmed live that Mail.send does not fire reliably from inside a
-// setTimeout callback, unlike completeObjective, which does.
 export const Q02_COMPLETION_DELAY_MS = 20_000;
 
 export const Q02_EDGE_SITE_NAME = `${Q02_CLIENT_NAME} — Edge Node`;
 
 export const Q02_ADRIAN_EMAIL = ADRIAN_COLE.email;
-export const Q02_REPORT_RECIPIENT = Q02_ADRIAN_EMAIL;
 export const Q02_REPORT_SUBJECT = "Anomaly Report — Skynet Logistics";
 
-// The three facts the player must discover themselves before reporting
-// (anomalous port, the service it identifies as, and the certificate
-// issuer). Named so both the freehand report body and the GoMail template's
-// field-value validation share one source of truth.
 export const Q02_ANOMALOUS_PORT = "8443";
 export const Q02_GATEWAY_SERVICE_NAME = "gateway.internal";
 export const Q02_CERTIFICATE_ISSUER = "ARKA Secure Infrastructure";
 
-// GoMail compose template with fill-in-the-blank fields for the three facts
-// above. Confirmed live: when sent via this template, Mail.Sent's `subject`
-// is the template `id` (not `title`/`label`) and `content` is a raw JSON
-// object of the field values — not merged template text. Objective 05
-// validation (isAnomalyReport) accounts for both this path and freehand
-// composition. See docs/source-current.md.
 export const Q02_REPORT_TEMPLATE_ID = "entity_resolution.q02.report";
 export const Q02_REPORT_TEMPLATE_LABEL = "Anomaly Report";
 
@@ -110,9 +84,6 @@ export const Q02_REPORT_BODY = [
     "Recommendation: Confirm ownership and purpose of the host.",
 ].join("\n");
 
-// HackHub feed post shown before the quest is claimed. A short teaser that
-// points to the mail for details, matching the pattern locked as standard
-// for Q03-Q16 (see docs/implementation-rules.md).
 export const Q02_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     content: "Follow-up from the last client. Check your mail.",
     author: {
@@ -166,8 +137,6 @@ export const Q02_OBJECTIVE_IDS = {
     reportAnomaly: "q02.objective.05",
 } as const;
 
-// Identical between production and replay (unlike Q01, whose last objective's
-// hint text deliberately differs between the two).
 export const Q02_OBJECTIVES = [
     {
         name: Q02_OBJECTIVE_IDS.checkTarget,
@@ -185,12 +154,6 @@ export const Q02_OBJECTIVES = [
         description: "Identify the service",
         unlocksAfter: [Q02_OBJECTIVE_IDS.scanHost],
     },
-    // Optional bonus, deliberately placed between Obj03 and Obj04. `hidden`
-    // is undocumented in the SDK's .d.ts — this is experimental, not yet
-    // live-confirmed to actually stay invisible until completeObjective()
-    // fires for it. Completed only when the player pings the private IP
-    // revealed by nslookup (Terminal.Ping isUp === false), not merely on
-    // the nslookup lookup itself — see q02-quest.ts's handlePing.
     {
         name: Q02_OBJECTIVE_IDS.checkDns,
         description: "Check the DNS",
@@ -209,10 +172,6 @@ export const Q02_OBJECTIVES = [
     },
 ];
 
-// Reward categories per the recovered Phase 8 economy lock. Granted as a lump
-// sum on completion, same as Q01 — these names are documentation, not
-// separately-triggered events. "identifyCriHostname" is the hidden
-// certificate-SAN clue found inside Objective 04, not a 6th objective.
 export const Q02_REWARDS = {
     investigateTarget: 20,
     serviceEnumeration: 15,

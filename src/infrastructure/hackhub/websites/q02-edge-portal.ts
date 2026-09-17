@@ -11,11 +11,6 @@ import { Q02_EDGE_SITE_NAME, Q02_WEB_HOST } from "../../../content/index.js";
 import httpErrorPage from "./q02-edge-http-error.html";
 import statusPage from "./q02-edge-status.html";
 
-// Port 80 is absent from Q02_NMAP_RESULT for this target (only 22/443/8443
-// are modeled) — per the mandatory protocol-gating rule (locked
-// 2026-09-14, docs/implementation-rules.md §6), a port not
-// listed at all defaults to CLOSE, so plain HTTP must return 400 Bad
-// Request here too, matching Q01SkynetLogisticsWebsite's pattern exactly.
 @RegisterWebsite
 export class Q02EdgeWebsite extends Website {
     SiteName = Q02_EDGE_SITE_NAME;

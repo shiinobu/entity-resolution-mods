@@ -11,26 +11,13 @@ export const Q01_WEB_HOST = "skynet-logistics.idx";
 export const Q01_WEB_HOME_HOST = `www.${Q01_WEB_HOST}`;
 export const Q01_WEB_HOME_URL = `https://${Q01_WEB_HOME_HOST}/`;
 
-// Backwards-compatible alias for callers that treat the public HTTPS surface as the home URL.
-export const Q01_WEB_HTTPS_URL = Q01_WEB_HOME_URL;
-
-// Experimental path-based redesign: the audited surface is exactly one public
-// host with several pages, discovered by path (dirhunter-style) instead of
-// separate subdomains. Not yet locked — see docs/source-current.md.
 export const Q01_WEB_AUDIT_PATH = "/security";
 export const Q01_WEB_FORBIDDEN_PATHS = ["/portal", "/status"] as const;
-export const Q01_WEB_PATHS = [
-    "/",
-    ...Q01_WEB_FORBIDDEN_PATHS,
-    Q01_WEB_AUDIT_PATH,
-] as const;
 export const Q01_WEB_AUDIT_URL = `https://${Q01_WEB_HOME_HOST}${Q01_WEB_AUDIT_PATH}`;
 
 export const Q01_LYNX_INPUT_IP = Q01_TARGET_IP;
 export const Q01_LYNX_INPUT_URL = `https://${Q01_TARGET_IP}/`;
 
-// Shared fixture data — identical between production and replay, so it lives
-// here once instead of being duplicated in both quest files.
 export interface Q01NmapPort {
     readonly port: number;
     readonly status: "OPEN" | "CLOSE";
@@ -66,14 +53,9 @@ export const Q01_NETWORK_PORTS = [
 ];
 
 export const Q01_ADRIAN_EMAIL = ADRIAN_COLE.email;
-export const Q01_REPORT_RECIPIENT = Q01_ADRIAN_EMAIL;
 export const Q01_REPORT_SUBJECT = "Security Audit — Jakarta";
 export const Q01_OPEN_PORTS = "443";
 
-// HackHub feed post shown before the quest is claimed. A short teaser that
-// points to the mail for details, rather than repeating the mail's content —
-// matches the pattern agreed for Q02 and locked as standard for Q03-Q16 (see
-// docs/implementation-rules.md).
 export const Q01_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     content: "Short audit for a client in Jakarta. Details in your mail.",
     author: {
@@ -82,12 +64,6 @@ export const Q01_HACKHUB_POST_PRODUCTION: QuestHackhubPostDefinition = {
     },
 };
 
-// Adrian's opening mail. Reuses Q01_REPORT_SUBJECT as its
-// subject (a single mail thread runs from this brief through the report to
-// the completion reply) — an intentional exception to the separate-subject
-// pattern locked for Q03-Q16; Q01 is FINAL LOCK and this threading is
-// already live-proven, so it is kept as historical precedent rather than
-// retrofitted.
 export const Q01_INCOMING_MAIL_CONTENT = [
     "I have a client looking for a short security audit.",
     "",
@@ -116,20 +92,9 @@ export const Q01_INCOMING_MAIL_CONTENT = [
     "— Adrian",
 ].join("\n");
 
-// GoMail compose template with fill-in-the-blank fields for the facts the
-// player must discover themselves. Mirrors Q02's Mail.registerTemplate setup
-// — replaces dumping this text as plain-text instructions inside the incoming
-// mail. Confirmed live (via Q02): under this mod's API-v1 compatibility mode,
-// sending via a registered template does NOT merge {{field}} into rendered
-// text — Mail.Sent's `subject` is the template id and `content` is a raw
-// JSON object of the field values. isAuditReport validates that path too.
 export const Q01_REPORT_TEMPLATE_ID = "entity_resolution.q01.report";
 export const Q01_REPORT_TEMPLATE_LABEL = "Audit Report";
 
-// Paces the report-submission sequence: Q01 has no intermediate "hold" mail
-// like Q02, so this is the only delay — submitAudit (the last objective)
-// doesn't complete instantly, so the completion mail + reward don't land the
-// same tick the report is sent.
 export const Q01_SUBMIT_AUDIT_DELAY_MS = 7_000;
 
 export const Q01_COMPLETION_MAIL_CONTENT_PRODUCTION = [
@@ -177,9 +142,6 @@ export const Q01_OBJECTIVE_IDS = {
     submitAudit: "q01.objective.06",
 } as const;
 
-// Identical between production and replay (matching Q02_OBJECTIVES) — the
-// submitAudit hint was removed because the GoMail compose template now
-// teaches the report format interactively instead of via static text.
 export const Q01_OBJECTIVES = [
     {
         name: Q01_OBJECTIVE_IDS.reviewScope,

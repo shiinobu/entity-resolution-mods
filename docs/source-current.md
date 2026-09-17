@@ -85,6 +85,11 @@ post-lock fix — see Changes below) plus the mod's internal XP ledger.
 | ARKA cert breadcrumb is purely decorative flavor | Same breadcrumb, same non-objective treatment | Unchanged — the one piece of Q01 that shipped exactly as designed. |
 | Reward paid via internal ledger only (implicit) | Reward's `$200` portion also posted through the real `Bank.transaction()` API | Bug found post-lock: the internal ledger never actually reached the player's real in-game bank balance. XP has no native bank equivalent, so it stays internal-ledger-only. |
 
+### Implementation notes (extracted from source comments, 2026-09-17)
+
+- **`HackhubPost` is a teaser, not the mail's content.** `Q01_HACKHUB_POST_PRODUCTION`'s feed text ("Short audit for a client in Jakarta. Details in your mail.") deliberately points to the mail rather than repeating it — this is the pattern locked as standard for every quest through Q16, and Q01 is where it started.
+- **Q01 threads one mail subject across the whole quest** (brief → report → completion reply, all `Q01_REPORT_SUBJECT`), unlike the separate-subject-per-mail pattern used from Q03 onward. This is an intentional, live-proven exception kept as historical precedent — not something to retrofit to match later quests.
+
 ---
 
 ## Q02 — THE ANOMALY (current)
@@ -174,6 +179,10 @@ Adrian: Good catch. I'll handle it from here.
 Adrian: And don't run another scan on that host.
 Player: Understood.
 ```
+
+### Implementation notes (extracted from source comments, 2026-09-17)
+
+- **The hidden CRI gateway (behind the certificate's hidden SAN entry) is a deliberate dead end, rendered as a connection timeout, not a 404.** It's never actually reachable — confirmed live that pinging it returns native `isUp: false` with no fixture needed — and browsing it used to hit HackHub's generic "no such host" 404 on both `http://`/`https://`. `Q02CriGatewayHostnameWebsite`/`Q02CriGatewayIpWebsite` reuse the shared `templates/unreachable-diagnostic.html` (see `docs/implementation-rules.md`'s template catalog) to render that outcome as an in-fiction timeout instead. Two `Website` registrations exist — one per `Host` string — because a player may reach this dead end via either the hostname or the raw IP `nslookup` revealed; this mirrors the raw-IP `Website.Host` workaround already documented in `docs/bugs.md` entry 11.
 
 ### Transition to Q03
 

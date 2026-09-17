@@ -21,14 +21,6 @@ const RENDERED_HTTP_ERROR_PAGE = httpErrorPage.replace(
     NGINX_VERSION_HEADER,
 );
 
-// Experimental: Website.Host set to a raw IP instead of a domain name — not
-// previously used in this project. See docs/source-current.md.
-//
-// Dynamic page: nginx genuinely rejects plain HTTP on an HTTPS-only port with
-// a "400 Bad Request" page, so an HTTP request here reproduces that instead of
-// the real certificate content. `context.url` is evaluated mod-side (not in
-// the page's sandboxed iframe), so this reliably distinguishes http/https —
-// unlike a client-side script inside the page itself.
 @RegisterWebsite
 export class Q02GatewayWebsite extends Website {
     SiteName = Q02_GATEWAY_SERVICE_NAME;

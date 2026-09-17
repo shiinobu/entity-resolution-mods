@@ -15,7 +15,6 @@ import {
     Q01_OPEN_PORTS,
     Q01_REPORT_BODY,
     Q01_REPORT_BODY_TEMPLATE,
-    Q01_REPORT_RECIPIENT,
     Q01_REPORT_SUBJECT,
     Q01_REPORT_TEMPLATE_ID,
     Q01_REPORT_TEMPLATE_LABEL,
@@ -28,8 +27,6 @@ import {
     Q01_WEB_HOST,
     Q01_WEB_HOME_HOST,
     Q01_WEB_HOME_URL,
-    Q01_WEB_HTTPS_URL,
-    Q01_WEB_PATHS,
 } from "../src/content/index.js";
 
 import { ConditionEvaluator } from "../src/domain/shared/index.js";
@@ -66,14 +63,11 @@ describe("Q01 — THE CONTRACT (FINAL LOCK, live-in-game passed)", () => {
         assert.equal(Q01_WEB_HOST, "skynet-logistics.idx");
     });
 
-    it("defines the canonical public host and audit/forbidden paths (path-based redesign, not yet locked)", () => {
+    it("defines the canonical public host and audit/forbidden paths (path-based redesign)", () => {
         assert.equal(Q01_WEB_HOME_HOST, "www.skynet-logistics.idx");
         assert.equal(Q01_WEB_AUDIT_PATH, "/security");
         assert.deepEqual(Q01_WEB_FORBIDDEN_PATHS, ["/portal", "/status"]);
-        assert.deepEqual(Q01_WEB_PATHS, ["/", "/portal", "/status", "/security"]);
-        assert.equal(Q01_WEB_PATHS.length, 4);
         assert.equal(Q01_WEB_HOME_URL, "https://www.skynet-logistics.idx/");
-        assert.equal(Q01_WEB_HTTPS_URL, Q01_WEB_HOME_URL);
         assert.equal(
             Q01_WEB_AUDIT_URL,
             "https://www.skynet-logistics.idx/security",
@@ -244,7 +238,6 @@ describe("Q01 — THE CONTRACT (FINAL LOCK, live-in-game passed)", () => {
 
     it("defines the canonical email identity and player-facing report template", () => {
         assert.equal(Q01_ADRIAN_EMAIL, "adrian.cole@phantom-net.void");
-        assert.equal(Q01_REPORT_RECIPIENT, Q01_ADRIAN_EMAIL);
         assert.equal(Q01_REPORT_SUBJECT, "Security Audit — Jakarta");
         assert.equal(
             Q01_REPORT_BODY_TEMPLATE,
@@ -319,12 +312,6 @@ describe("Q01 — web path boundary (experimental path-based redesign, not yet l
         resolve(websiteDir, "q01-skynet-portal.ts"),
         "utf8",
     );
-
-    it("defines exactly four pages under one public host", () => {
-        assert.equal(Q01_WEB_PATHS.length, 4);
-        assert.deepEqual(Q01_WEB_PATHS, ["/", "/portal", "/status", "/security"]);
-        assert.deepEqual(Q01_WEB_FORBIDDEN_PATHS, ["/portal", "/status"]);
-    });
 
     it("keeps www as the single public host and /security as the audit target", () => {
         assert.equal(Q01_WEB_HOME_HOST, "www.skynet-logistics.idx");
